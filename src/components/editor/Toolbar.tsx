@@ -56,6 +56,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
     clearCanvas,
     history,
     shapes,
+    toggleOrientation,
   } = useEditorStore()
 
   // Helper function to get a good position for new shapes
@@ -350,11 +351,32 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
             >
               <MousePointer className="w-5 h-5" />
             </button>
+
+            <button
+              onClick={toggleOrientation}
+              className="p-2 rounded hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+              title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
         {/* Right Section - File Operations */}
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-4">
+            <span className="text-sm text-gray-600">
+              {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+            </span>
+            <button
+              onClick={toggleOrientation}
+              className="p-2 rounded hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+              title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
+          </div>
+          
           <button
             onClick={clearCanvas}
             className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"

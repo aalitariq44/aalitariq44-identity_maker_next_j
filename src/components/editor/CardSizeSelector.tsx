@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { CARD_SIZES, type CardSize } from '@/types/shapes'
-import { CreditCard, FileText, Sparkles } from 'lucide-react'
+import { CreditCard, FileText, Sparkles, RotateCcw } from 'lucide-react'
+import { useEditorStore } from '@/store/useEditorStore'
 
 interface CardSizeSelectorProps {
   selectedSize: { width: number; height: number }
@@ -25,12 +26,25 @@ export const CardSizeSelector: React.FC<CardSizeSelectorProps> = ({
   onSizeChange,
   onClose,
 }) => {
+  const { canvasSettings, toggleOrientation } = useEditorStore()
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          اختر حجم البطاقة
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-800">
+            اختر حجم البطاقة
+          </h3>
+          
+          <button
+            onClick={toggleOrientation}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+            title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 mb-8">
           {CARD_SIZES.map((size) => {
@@ -64,6 +78,9 @@ export const CardSizeSelector: React.FC<CardSizeSelectorProps> = ({
                     </div>
                     <div className="text-sm text-gray-500">
                       {size.width} × {size.height} بكسل
+                      <span className="mr-2 text-xs bg-gray-100 px-2 py-1 rounded">
+                        {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+                      </span>
                     </div>
                   </div>
                   

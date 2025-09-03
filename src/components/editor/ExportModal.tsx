@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Download, Eye, FileImage, FileType, File } from 'lucide-react'
+import { Download, Eye, FileImage, FileType, File, RotateCcw } from 'lucide-react'
+import { useEditorStore } from '@/store/useEditorStore'
 
 interface ExportModalProps {
   isOpen: boolean
@@ -17,6 +18,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   isExporting,
 }) => {
   const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpg' | 'pdf'>('png')
+  const { canvasSettings, toggleOrientation } = useEditorStore()
 
   if (!isOpen) return null
 
@@ -81,6 +83,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </h3>
           <p className="text-gray-600">
             اختر صيغة التصدير المناسبة لاحتياجاتك
+            <span className="mr-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
+              الاتجاه الحالي: {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+            </span>
           </p>
         </div>
         
@@ -144,16 +149,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-3 text-sm text-gray-600">
-            <Eye className="w-5 h-5" />
-            <div>
-              <div className="font-medium">نصائح للتصدير:</div>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                <li>استخدم PNG للطباعة عالية الجودة</li>
-                <li>استخدم JPG للمشاركة السريعة</li>
-                <li>استخدم PDF للطباعة الاحترافية</li>
-              </ul>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Eye className="w-5 h-5" />
+              <div>
+                <div className="font-medium">نصائح للتصدير:</div>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>استخدم PNG للطباعة عالية الجودة</li>
+                  <li>استخدم JPG للمشاركة السريعة</li>
+                  <li>استخدم PDF للطباعة الاحترافية</li>
+                </ul>
+              </div>
             </div>
+            
+            <button
+              onClick={toggleOrientation}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+              title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+            >
+              <RotateCcw className="w-4 h-4" />
+              {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
+            </button>
           </div>
         </div>
 

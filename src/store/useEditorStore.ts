@@ -195,6 +195,10 @@ export const useEditorStore = create<EditorStore>()(
             state.canvasSettings.orientation === 'portrait'
               ? 'landscape'
               : 'portrait'
+          
+          // Save to history
+          state.history.past.push([...state.shapes])
+          state.history.future = []
         })
       },
 

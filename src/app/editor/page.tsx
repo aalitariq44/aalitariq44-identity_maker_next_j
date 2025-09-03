@@ -13,7 +13,7 @@ import {
   saveProjectAsJSON, 
   loadProjectFromJSON 
 } from '@/lib/exportUtils'
-import { ArrowLeft, Settings, Download, Save, FolderOpen, User, QrCode, ScanLine } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Save, FolderOpen, User, QrCode, ScanLine, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { 
   createDefaultPerson, 
@@ -142,13 +142,17 @@ export default function EditorPage() {
             e.preventDefault()
             handleAddBarcode()
             break
+          case 'r':
+            e.preventDefault()
+            toggleOrientation()
+            break
         }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [shapes.length, canvasSettings.width, canvasSettings.height])
+  }, [shapes.length, canvasSettings.width, canvasSettings.height, toggleOrientation])
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -169,6 +173,20 @@ export default function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 mr-4">
+            <span className="text-sm text-gray-600">
+              الاتجاه: {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+            </span>
+            <button
+              onClick={toggleOrientation}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+              title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+            >
+              <RotateCcw className="w-4 h-4" />
+              {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
+            </button>
+          </div>
+
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"

@@ -12,6 +12,7 @@ export const PropertiesPanel: React.FC = () => {
     updateShape,
     canvasSettings,
     updateCanvasSettings,
+    toggleOrientation,
   } = useEditorStore()
 
   const selectedShape = useMemo(() => {
@@ -35,14 +36,19 @@ export const PropertiesPanel: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                العرض (بكسل)
+                الاتجاه
               </label>
-              <input
-                type="number"
-                value={canvasSettings.width}
-                onChange={(e) => updateCanvasSettings({ width: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+                </span>
+                <button
+                  onClick={toggleOrientation}
+                  className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+                >
+                  تبديل الاتجاه
+                </button>
+              </div>
             </div>
 
             <div>
