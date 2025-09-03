@@ -39,11 +39,22 @@ interface EditorStore extends EditorState {
   copyShape: (id: string) => void
   pasteShape: () => void
   
-  // Layer actions
-  bringToFront: (id: string) => void
-  sendToBack: (id: string) => void
-  bringForward: (id: string) => void
-  sendBackward: (id: string) => void
+  // Enhanced layer actions with proper z-index management
+  reorderLayers: (shapeIds: string[], newOrder: number[]) => void
+  
+  // Multi-selection actions
+  selectMultiple: (shapeIds: string[]) => void
+  getMultiSelection: () => string[]
+  
+  // Enhanced clipboard actions
+  cutShapes: (shapeIds: string[]) => void
+  copyShapes: (shapeIds: string[]) => void
+  
+  // Zoom and pan actions
+  setZoom: (zoom: number) => void
+  panCanvas: (deltaX: number, deltaY: number) => void
+  resetView: () => void
+  fitToScreen: () => void
 }
 
 const initialCanvasSettings: CanvasSettings = {
@@ -111,6 +122,15 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shapeIndex = state.shapes.findIndex((s) => s.id === id)
           if (shapeIndex !== -1) {
+            // Save to history for significant changes (not for every small movement)
+            const significantChanges = ['fill', 'stroke', 'strokeWidth', 'text', 'fontSize', 'fontFamily', 'visible', 'locked']
+            const hasSignificantChange = significantChanges.some(key => key in updates)
+            
+            if (hasSignificantChange) {
+              state.history.past.push([...state.shapes])
+              state.history.future = []
+            }
+            
             Object.assign(state.shapes[shapeIndex], updates)
           }
         })
@@ -329,12 +349,116 @@ export const useEditorStore = create<EditorStore>()(
         })
       },
 
+      // Enhanced layer actions with proper z-index management
+      reorderLayers: (shapeIds: string[], newOrder: number[]) => {
+        set((state) => {
+          state.history.past.push([...state.shapes])
+          state.history.future = []
+          
+          shapeIds.forEach((id, index) => {
+            const shape = state.shapes.find(s => s.id === id)
+            if (shape) {
+              shape.zIndex = newOrder[index]
+            }
+          })
+          
+          // Re-sort shapes array to maintain consistency
+          state.shapes.sort((a, b) => a.zIndex - b.zIndex)
+        })
+      },
+      
+      // Multi-selection actions
+      selectMultiple: (shapeIds: string[]) => {
+        set((state) => {
+          // Store multi-selection in a separate property if needed
+          // For now, we'll handle this in the UI components
+        })
+      },
+      
+      getMultiSelection: () => {
+        // This will be handled by the UI components
+        return []
+      },
+      
+      // Enhanced clipboard actions
+      cutShapes: (shapeIds: string[]) => {
+        set((state) => {
+          const shapesToCut = state.shapes.filter(s => shapeIds.includes(s.id))
+          state.clipboard = shapesToCut
+          
+          // Remove the shapes from canvas
+          state.history.past.push([...state.shapes])
+          state.shapes = state.shapes.filter(s => !shapeIds.includes(s.id))
+          state.selectedShapeId = null
+          state.history.future = []
+        })
+      },
+      
+      copyShapes: (shapeIds: string[]) => {
+        set((state) => {
+          const shapesToCopy = state.shapes.filter(s => shapeIds.includes(s.id))
+          state.clipboard = shapesToCopy
+        })
+      },
+      
+      // Zoom and pan actions
+      setZoom: (zoom: number) => {
+        set((state) => {
+          state.canvasSettings.zoom = Math.max(0.1, Math.min(5, zoom))
+        })
+      },
+      
+      panCanvas: (deltaX: number, deltaY: number) => {
+        set((state) => {
+          // Pan offset can be stored in canvas settings if needed
+          // For now, this will be handled by the canvas component
+        })
+      },
+      
+      resetView: () => {
+        set((state) => {
+          state.canvasSettings.zoom = 1
+          // Reset pan offset if stored in settings
+        })
+      },
+      
+      fitToScreen: () => {
+        set((state) => {
+          // Calculate zoom to fit all shapes in view
+          if (state.shapes.length === 0) return
+          
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+          
+          state.shapes.forEach(shape => {
+            minX = Math.min(minX, shape.position.x)
+            minY = Math.min(minY, shape.position.y)
+            maxX = Math.max(maxX, shape.position.x + shape.size.width)
+            maxY = Math.max(maxY, shape.position.y + shape.size.height)
+          })
+          
+          const contentWidth = maxX - minX
+          const contentHeight = maxY - minY
+          
+          const zoomX = state.canvasSettings.width / contentWidth
+          const zoomY = state.canvasSettings.height / contentHeight
+          
+          state.canvasSettings.zoom = Math.min(zoomX, zoomY, 2) * 0.9 // Add some padding
+        })
+      },
+
       bringToFront: (id: string) => {
         set((state) => {
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
+            // Save to history before making changes
+            state.history.past.push([...state.shapes])
+            state.history.future = []
+            
             const maxZIndex = Math.max(...state.shapes.map((s) => s.zIndex))
             shape.zIndex = maxZIndex + 1
+            
+            // Re-sort shapes array to maintain consistency
+            state.shapes.sort((a, b) => a.zIndex - b.zIndex)
           }
         })
       },
@@ -343,8 +467,15 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
+            // Save to history before making changes
+            state.history.past.push([...state.shapes])
+            state.history.future = []
+            
             const minZIndex = Math.min(...state.shapes.map((s) => s.zIndex))
             shape.zIndex = minZIndex - 1
+            
+            // Re-sort shapes array to maintain consistency
+            state.shapes.sort((a, b) => a.zIndex - b.zIndex)
           }
         })
       },
@@ -353,7 +484,27 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
-            shape.zIndex += 1
+            // Save to history before making changes
+            state.history.past.push([...state.shapes])
+            state.history.future = []
+            
+            // Find the next higher z-index
+            const currentIndex = shape.zIndex
+            const higherShapes = state.shapes.filter(s => s.zIndex > currentIndex)
+            
+            if (higherShapes.length > 0) {
+              const nextHigher = Math.min(...higherShapes.map(s => s.zIndex))
+              
+              // Swap z-indices
+              const shapeToSwap = state.shapes.find(s => s.zIndex === nextHigher)
+              if (shapeToSwap) {
+                shape.zIndex = nextHigher
+                shapeToSwap.zIndex = currentIndex
+              }
+              
+              // Re-sort shapes array to maintain consistency
+              state.shapes.sort((a, b) => a.zIndex - b.zIndex)
+            }
           }
         })
       },
@@ -362,7 +513,27 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
-            shape.zIndex -= 1
+            // Save to history before making changes
+            state.history.past.push([...state.shapes])
+            state.history.future = []
+            
+            // Find the next lower z-index
+            const currentIndex = shape.zIndex
+            const lowerShapes = state.shapes.filter(s => s.zIndex < currentIndex)
+            
+            if (lowerShapes.length > 0) {
+              const nextLower = Math.max(...lowerShapes.map(s => s.zIndex))
+              
+              // Swap z-indices
+              const shapeToSwap = state.shapes.find(s => s.zIndex === nextLower)
+              if (shapeToSwap) {
+                shape.zIndex = nextLower
+                shapeToSwap.zIndex = currentIndex
+              }
+              
+              // Re-sort shapes array to maintain consistency
+              state.shapes.sort((a, b) => a.zIndex - b.zIndex)
+            }
           }
         })
       },

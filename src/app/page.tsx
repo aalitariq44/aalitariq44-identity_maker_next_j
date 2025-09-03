@@ -1,9 +1,22 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { CreditCard, Palette, Download, FileText, Sparkles, ArrowLeft } from 'lucide-react'
 
 export default function HomePage() {
+  const router = useRouter()
+
+  // Temporary redirect for development - remove this when done
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('hasVisitedHome')
+    if (!hasVisited) {
+      localStorage.setItem('hasVisitedHome', 'true')
+      router.push('/editor')
+    }
+  }, [router])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}

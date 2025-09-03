@@ -105,39 +105,86 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     setSelectedId(selectedShapeId)
   }, [selectedShapeId])
 
+  const attachTransformer = useCallback((shapeId: string) => {
+    if (!transformerRef.current || !stageRef.current) return
+
+    // Use setTimeout with longer delay to ensure shape is fully rendered
+    setTimeout(() => {
+      try {
+        const selectedNode = stageRef.current.findOne(`#${shapeId}`)
+        if (selectedNode) {
+          console.log('Attaching transformer to shape:', shapeId)
+
+          // Clear any existing nodes first
+          transformerRef.current.nodes([])
+
+          // Attach to the new node
+          transformerRef.current.nodes([selectedNode])
+
+          // Force update the transformer
+          transformerRef.current.getLayer()?.batchDraw()
+
+          // Additional force update for better positioning
+          if (transformerRef.current.forceUpdate) {
+            transformerRef.current.forceUpdate()
+          }
+
+          // Log transformer bounds for debugging
+          const transformerBounds = transformerRef.current.getClientRect()
+          console.log('Transformer bounds:', transformerBounds)
+
+        } else {
+          console.warn('Shape not found for transformer attachment:', shapeId)
+          // Try to find by traversing the stage
+          const allNodes = stageRef.current.find(`#${shapeId}`)
+          console.log('All nodes found with ID:', allNodes)
+        }
+      } catch (error) {
+        console.error('Error attaching transformer:', error)
+      }
+    }, 100) // Increased delay to 100ms
+  }, [])
+
   useEffect(() => {
     if (selectedId && transformerRef.current && stageRef.current) {
-      // Wait a bit for the shape to be rendered
+      // Use setTimeout with longer delay to ensure shape is fully rendered
       setTimeout(() => {
-        const selectedNode = stageRef.current?.findOne(`#${selectedId}`)
-        if (selectedNode && transformerRef.current) {
-          console.log('Attaching transformer to shape:', selectedId)
-          transformerRef.current.nodes([selectedNode])
-          transformerRef.current.getLayer()?.batchDraw()
-        }
+        attachTransformer(selectedId)
       }, 50)
     } else if (transformerRef.current) {
       transformerRef.current.nodes([])
       transformerRef.current.getLayer()?.batchDraw()
     }
-  }, [selectedId, shapes.length])
+  }, [selectedId, shapes.length, attachTransformer])
+
+  // Additional effect to handle shape updates
+  useEffect(() => {
+    if (selectedId && transformerRef.current && stageRef.current) {
+      // Re-attach transformer when shapes change
+      const selectedShape = shapes.find(s => s.id === selectedId)
+      if (selectedShape) {
+        setTimeout(() => {
+          attachTransformer(selectedId)
+        }, 10)
+      }
+    }
+  }, [shapes, selectedId, attachTransformer])
 
   const handleShapeSelect = useCallback((id: string) => {
     console.log('Shape selected:', id)
     setSelectedId(id)
     selectShape(id)
-    
-    // Force transformer update after selection
+
+    // Force transformer update after selection with multiple attempts
     setTimeout(() => {
-      if (transformerRef.current && stageRef.current) {
-        const selectedNode = stageRef.current.findOne(`#${id}`)
-        if (selectedNode) {
-          transformerRef.current.nodes([selectedNode])
-          transformerRef.current.getLayer()?.batchDraw()
-        }
-      }
+      attachTransformer(id)
     }, 10)
-  }, [selectShape])
+
+    // Additional attempt after a longer delay
+    setTimeout(() => {
+      attachTransformer(id)
+    }, 100)
+  }, [selectShape, attachTransformer])
 
   const handleShapeDragEnd = useCallback((e: any, shapeId: string) => {
     const node = e.target
@@ -427,7 +474,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
                 keepRatio: false,
                 enabledAnchors: [
                   'top-left',
-                  'top-center', 
+                  'top-center',
                   'top-right',
                   'middle-right',
                   'bottom-right',
@@ -441,19 +488,31 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
                 anchorFill: "#ffffff",
                 anchorStroke: "#0ea5e9",
                 anchorStrokeWidth: 2,
-                anchorSize: 12,
-                anchorCornerRadius: 6,
-                rotateAnchorOffset: 40,
+                anchorSize: 16,
+                anchorCornerRadius: 8,
+                rotateAnchorOffset: 50,
                 rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
                 centeredScaling: false,
                 ignoreStroke: false,
                 padding: 8,
+                shouldOverdrawWholeArea: true, // Ensure transformer is drawn over the entire area
+                flipEnabled: false, // Disable flipping to prevent confusion
+                useSingleNodeRotation: true, // Better rotation handling
+                resizeEnabled: true, // Ensure resize is enabled
+                rotateEnabled: true, // Ensure rotation is enabled
+                boundBoxFunc: (oldBox: any, newBox: any) => {
+                  // Ensure minimum size
+                  if (newBox.width < 10 || newBox.height < 10) {
+                    return oldBox
+                  }
+                  return newBox
+                },
                 // Add visual feedback
                 onTransformStart: () => {
-                  // Could add animation or visual feedback here
+                  console.log('Transform started')
                 },
                 onTransformEnd: () => {
-                  // Could add completion feedback here
+                  console.log('Transform ended')
                 },
               })
             ]

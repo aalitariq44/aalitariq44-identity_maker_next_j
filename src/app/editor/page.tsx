@@ -3,8 +3,6 @@
 import React, { useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useEditorStore } from '@/store/useEditorStore'
-import PropertiesPanel from '@/components/editor/PropertiesPanel'
-import LayersPanel from '@/components/editor/LayersPanel'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
 import { 
@@ -13,16 +11,14 @@ import {
   saveProjectAsJSON, 
   loadProjectFromJSON 
 } from '@/lib/exportUtils'
-import { ArrowLeft, Settings, Download, Save, FolderOpen, User, QrCode, ScanLine, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Save, FolderOpen, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
-import { 
-  createDefaultPerson, 
-  createDefaultQR, 
-  createDefaultBarcode 
-} from '@/lib/konvaUtils'
 
-const CanvasStage = dynamic(() => import('@/components/editor/SimpleCanvasStage'), { ssr: false })
-const Toolbar = dynamic(() => import('@/components/editor/Toolbar'), { ssr: false })
+// Dynamic imports for client-side components
+const AdvancedCanvasStage = dynamic(() => import('@/components/editor/AdvancedCanvasStage'), { ssr: false })
+const AdvancedToolbar = dynamic(() => import('@/components/editor/AdvancedToolbar'), { ssr: false })
+const AdvancedLayersPanel = dynamic(() => import('@/components/editor/AdvancedLayersPanel'), { ssr: false })
+const AdvancedPropertiesPanel = dynamic(() => import('@/components/editor/AdvancedPropertiesPanel'), { ssr: false })
 
 export default function EditorPage() {
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -36,8 +32,6 @@ export default function EditorPage() {
     toggleOrientation,
     saveProject,
     loadProject,
-    addShape,
-    shapes,
   } = useEditorStore()
 
   const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
@@ -93,66 +87,6 @@ export default function EditorPage() {
     setCanvasSize(size.width, size.height)
     setShowSettingsModal(false)
   }
-
-  // Helper function to get a good position for new shapes
-  const getNextShapePosition = () => {
-    const baseX = 100
-    const baseY = 100
-    const offset = shapes.length * 30 // Offset each new shape by 30px
-    
-    // Keep shapes within canvas bounds
-    const x = baseX + (offset % (canvasSettings.width - 200))
-    const y = baseY + (Math.floor(offset / (canvasSettings.width - 200)) * 30) % (canvasSettings.height - 200)
-    
-    return { x, y }
-  }
-
-  const handleAddPerson = () => {
-    const position = getNextShapePosition()
-    const person = createDefaultPerson(position.x, position.y)
-    addShape(person)
-  }
-
-  const handleAddQR = () => {
-    const position = getNextShapePosition()
-    const qr = createDefaultQR(position.x, position.y)
-    addShape(qr)
-  }
-
-  const handleAddBarcode = () => {
-    const position = getNextShapePosition()
-    const barcode = createDefaultBarcode(position.x, position.y)
-    addShape(barcode)
-  }
-
-  // Handle keyboard shortcuts
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey) {
-        switch (e.key.toLowerCase()) {
-          case 'p':
-            e.preventDefault()
-            handleAddPerson()
-            break
-          case 'q':
-            e.preventDefault()
-            handleAddQR()
-            break
-          case 'b':
-            e.preventDefault()
-            handleAddBarcode()
-            break
-          case 'r':
-            e.preventDefault()
-            toggleOrientation()
-            break
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [shapes.length, canvasSettings.width, canvasSettings.height, toggleOrientation])
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -221,8 +155,8 @@ export default function EditorPage() {
         </div>
       </header>
 
-      {/* Toolbar */}
-      <Toolbar
+      {/* Advanced Toolbar */}
+      <AdvancedToolbar
         onExport={() => setShowExportModal(true)}
         onSave={handleSaveProject}
         onLoad={handleLoadProject}
@@ -233,7 +167,7 @@ export default function EditorPage() {
         {/* Canvas Area */}
         <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
           <div ref={canvasRef} className="flex items-center justify-center">
-            <CanvasStage
+            <AdvancedCanvasStage
               width={Math.min(canvasSettings.width, 800)}
               height={Math.min(canvasSettings.height, 600)}
             />
@@ -242,11 +176,11 @@ export default function EditorPage() {
 
         {/* Right Panel - Properties and Layers */}
         <div className="flex">
-          {/* Properties Panel */}
-          <PropertiesPanel />
+          {/* Advanced Properties Panel */}
+          <AdvancedPropertiesPanel className="w-80" />
           
-          {/* Layers Panel */}
-          <LayersPanel className="w-80" />
+          {/* Advanced Layers Panel */}
+          <AdvancedLayersPanel className="w-80" />
         </div>
       </div>
 

@@ -280,8 +280,12 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       }
     }
 
-    // Find clicked shape
-    for (const shape of shapes) {
+    // Find clicked shape (check from top to bottom - highest z-index first)
+    const sortedShapesForSelection = [...shapes]
+      .filter(shape => shape.visible && !shape.locked) // Only consider visible and unlocked shapes
+      .sort((a, b) => b.zIndex - a.zIndex) // Sort by z-index descending (highest first)
+    
+    for (const shape of sortedShapesForSelection) {
       if (isPointInShape({ x, y }, shape)) {
         setSelectedShapeId(shape.id)
         selectShape(shape.id)
@@ -616,8 +620,14 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
     console.log('Drawing background:', canvasSettings.backgroundColor)
     console.log('Shapes to draw:', shapes.length)
     
-    // Draw shapes
-    shapes.forEach((shape, index) => {
+    // Sort shapes by z-index (lowest first for proper drawing order)
+    const sortedShapes = [...shapes].sort((a, b) => a.zIndex - b.zIndex)
+    
+    // Draw shapes in correct z-index order
+    sortedShapes.forEach((shape, index) => {
+      // Skip hidden shapes
+      if (!shape.visible) return
+      
       console.log(`Drawing shape ${index}:`, shape)
       
       context.save()
