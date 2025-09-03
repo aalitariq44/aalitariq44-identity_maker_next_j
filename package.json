@@ -6,22 +6,37 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.2"
+    "next": "15.5.2",
+    "zustand": "^4.5.5",
+    "konva": "^9.2.0",
+    "react-konva": "^18.2.10",
+    "react-color": "^2.19.3",
+    "html-to-image": "^1.11.11",
+    "jspdf": "^2.5.1",
+    "lucide-react": "^0.400.0",
+    "immer": "^10.0.3",
+    "nanoid": "^5.0.7"
   },
   "devDependencies": {
     "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-color": "^3.0.12",
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
-    "@eslint/eslintrc": "^3"
+    "@eslint/eslintrc": "^3",
+    "prettier": "^3.3.3",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1"
   }
 }

@@ -1,0 +1,130 @@
+export interface Position {
+  x: number
+  y: number
+}
+
+export interface Size {
+  width: number
+  height: number
+}
+
+export interface BaseShape {
+  id: string
+  type: 'rect' | 'circle' | 'text' | 'triangle' | 'image'
+  position: Position
+  size: Size
+  rotation: number
+  opacity: number
+  visible: boolean
+  locked: boolean
+  zIndex: number
+}
+
+export interface RectShape extends BaseShape {
+  type: 'rect'
+  fill: string
+  stroke: string
+  strokeWidth: number
+  cornerRadius: number
+}
+
+export interface CircleShape extends BaseShape {
+  type: 'circle'
+  fill: string
+  stroke: string
+  strokeWidth: number
+  radius: number
+}
+
+export interface TextShape extends BaseShape {
+  type: 'text'
+  text: string
+  fontSize: number
+  fontFamily: string
+  fontWeight: 'normal' | 'bold' | 'lighter'
+  fontStyle: 'normal' | 'italic'
+  fill: string
+  stroke: string
+  strokeWidth: number
+  align: 'left' | 'center' | 'right'
+  verticalAlign: 'top' | 'middle' | 'bottom'
+  lineHeight: number
+  letterSpacing: number
+}
+
+export interface TriangleShape extends BaseShape {
+  type: 'triangle'
+  fill: string
+  stroke: string
+  strokeWidth: number
+  points: number[]
+}
+
+export interface ImageShape extends BaseShape {
+  type: 'image'
+  src: string
+  cropX: number
+  cropY: number
+  cropWidth: number
+  cropHeight: number
+}
+
+export type Shape = RectShape | CircleShape | TextShape | TriangleShape | ImageShape
+
+export interface CanvasSettings {
+  width: number
+  height: number
+  orientation: 'portrait' | 'landscape'
+  backgroundColor: string
+  gridSize: number
+  showGrid: boolean
+  snapToGrid: boolean
+  zoom: number
+  gridColor: string
+}
+
+export interface EditorState {
+  shapes: Shape[]
+  selectedShapeId: string | null
+  canvasSettings: CanvasSettings
+  history: {
+    past: Shape[][]
+    present: Shape[]
+    future: Shape[][]
+  }
+  clipboard: Shape[]
+}
+
+export interface CardSize {
+  name: string
+  width: number
+  height: number
+  description: string
+}
+
+export const CARD_SIZES: CardSize[] = [
+  {
+    name: 'بطاقة ماستركارد',
+    width: 856,
+    height: 540,
+    description: '85.60 × 53.98 ملم',
+  },
+  {
+    name: 'بطاقة هوية مدرسية',
+    width: 900,
+    height: 560,
+    description: '90 × 56 ملم',
+  },
+  {
+    name: 'بطاقة أعمال',
+    width: 890,
+    height: 510,
+    description: '89 × 51 ملم',
+  },
+  {
+    name: 'بطاقة مخصصة',
+    width: 800,
+    height: 500,
+    description: 'حجم مخصص',
+  },
+]

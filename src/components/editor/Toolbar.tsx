@@ -1,0 +1,281 @@
+'use client'
+
+import React from 'react'
+import { useEditorStore } from '@/store/useEditorStore'
+import { 
+  Square, 
+  Circle, 
+  Type, 
+  Triangle, 
+  Image,
+  Undo2,
+  Redo2,
+  Copy,
+  Clipboard,
+  Trash2,
+  RotateCcw,
+  Grid3X3,
+  ZoomIn,
+  ZoomOut,
+  Move,
+  MousePointer
+} from 'lucide-react'
+import {
+  createDefaultRect,
+  createDefaultCircle,
+  createDefaultText,
+  createDefaultTriangle,
+} from '@/lib/konvaUtils'
+
+interface ToolbarProps {
+  onExport?: () => void
+  onSave?: () => void
+  onLoad?: () => void
+}
+
+export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) => {
+  const {
+    addShape,
+    selectedShapeId,
+    deleteShape,
+    duplicateShape,
+    copyShape,
+    pasteShape,
+    undo,
+    redo,
+    canvasSettings,
+    updateCanvasSettings,
+    clearCanvas,
+    history,
+  } = useEditorStore()
+
+  const handleAddRect = () => {
+    const rect = createDefaultRect(50, 50)
+    addShape(rect)
+  }
+
+  const handleAddCircle = () => {
+    const circle = createDefaultCircle(50, 50)
+    addShape(circle)
+  }
+
+  const handleAddText = () => {
+    const text = createDefaultText(50, 50)
+    addShape(text)
+  }
+
+  const handleAddTriangle = () => {
+    const triangle = createDefaultTriangle(50, 50)
+    addShape(triangle)
+  }
+
+  const handleDeleteSelected = () => {
+    if (selectedShapeId) {
+      deleteShape(selectedShapeId)
+    }
+  }
+
+  const handleDuplicateSelected = () => {
+    if (selectedShapeId) {
+      duplicateShape(selectedShapeId)
+    }
+  }
+
+  const handleCopySelected = () => {
+    if (selectedShapeId) {
+      copyShape(selectedShapeId)
+    }
+  }
+
+  const handleToggleGrid = () => {
+    updateCanvasSettings({ showGrid: !canvasSettings.showGrid })
+  }
+
+  const handleToggleSnapToGrid = () => {
+    updateCanvasSettings({ snapToGrid: !canvasSettings.snapToGrid })
+  }
+
+  const canUndo = history.past.length > 0
+  const canRedo = history.future.length > 0
+
+  return (
+    <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between p-4">
+        {/* Left Section - Shape Tools */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 mr-4">
+            <h2 className="text-lg font-semibold text-gray-800">أدوات التصميم</h2>
+          </div>
+          
+          {/* Shape Tools */}
+          <div className="flex items-center gap-1 border-r border-gray-300 pr-4">
+            <button
+              onClick={handleAddRect}
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="إضافة مستطيل"
+            >
+              <Square className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleAddCircle}
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="إضافة دائرة"
+            >
+              <Circle className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleAddText}
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="إضافة نص"
+            >
+              <Type className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleAddTriangle}
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="إضافة مثلث"
+            >
+              <Triangle className="w-5 h-5" />
+            </button>
+            
+            <button
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="إضافة صورة"
+              disabled
+            >
+              <Image className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Edit Tools */}
+          <div className="flex items-center gap-1 border-r border-gray-300 pr-4">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="p-2 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="تراجع"
+            >
+              <Undo2 className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="p-2 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="إعادة"
+            >
+              <Redo2 className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Object Tools */}
+          <div className="flex items-center gap-1 border-r border-gray-300 pr-4">
+            <button
+              onClick={handleCopySelected}
+              disabled={!selectedShapeId}
+              className="p-2 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="نسخ"
+            >
+              <Copy className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={pasteShape}
+              className="p-2 rounded hover:bg-gray-100 transition-colors"
+              title="لصق"
+            >
+              <Clipboard className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleDuplicateSelected}
+              disabled={!selectedShapeId}
+              className="p-2 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="تكرار"
+            >
+              <Move className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleDeleteSelected}
+              disabled={!selectedShapeId}
+              className="p-2 rounded hover:bg-gray-100 transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="حذف"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* View Tools */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleToggleGrid}
+              className={`p-2 rounded transition-colors ${
+                canvasSettings.showGrid 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100'
+              }`}
+              title="إظهار/إخفاء الشبكة"
+            >
+              <Grid3X3 className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleToggleSnapToGrid}
+              className={`p-2 rounded transition-colors ${
+                canvasSettings.snapToGrid 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100'
+              }`}
+              title="محاذاة للشبكة"
+            >
+              <MousePointer className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section - File Operations */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={clearCanvas}
+            className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          >
+            مسح الكل
+          </button>
+          
+          {onLoad && (
+            <button
+              onClick={onLoad}
+              className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+            >
+              فتح مشروع
+            </button>
+          )}
+          
+          {onSave && (
+            <button
+              onClick={onSave}
+              className="px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors"
+            >
+              حفظ المشروع
+            </button>
+          )}
+          
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition-colors"
+            >
+              تصدير
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Toolbar

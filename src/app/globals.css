@@ -5,13 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -22,5 +15,82 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Arial", "Tahoma", "Segoe UI", sans-serif;
+  direction: rtl;
+}
+
+/* Arabic text support */
+* {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Override for specific elements that should be LTR */
+.ltr, .ltr * {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Canvas specific styles */
+.canvas-container {
+  direction: ltr;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Konva stage positioning */
+.konvajs-content {
+  direction: ltr !important;
+}
+
+/* Color picker positioning for RTL */
+.sketch-picker {
+  direction: ltr !important;
+}
+
+/* Fix for input fields in RTL */
+input[type="number"], input[type="text"], textarea, select {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Utility classes */
+.text-arabic {
+  font-family: "Arial", "Tahoma", "Segoe UI", sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+.text-english {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Loading animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
 }
