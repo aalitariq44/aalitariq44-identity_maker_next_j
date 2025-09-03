@@ -54,6 +54,16 @@ const nextConfig: NextConfig = {
   
   // Ensure proper transpilation
   transpilePackages: ['konva', 'react-konva'],
+
+  // Configure external image domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
