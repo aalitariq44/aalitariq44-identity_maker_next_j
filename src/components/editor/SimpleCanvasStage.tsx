@@ -32,6 +32,9 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
     moveShape,
     updateShape,
     resizeShape,
+    deleteShape,
+    undo,
+    redo,
   } = useEditorStore()
 
   useEffect(() => {
@@ -41,6 +44,47 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       setContext(ctx)
     }
   }, [])
+
+  // Keyboard event handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Ctrl+Z (Undo)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+        return
+      }
+
+      // Handle Ctrl+Y or Ctrl+Shift+Z (Redo)
+      if (((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Z')) {
+        e.preventDefault()
+        redo()
+        return
+      }
+
+      // Only handle other keyboard events when we have a selected shape
+      if (!selectedShapeId) return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        deleteShape(selectedShapeId)
+      }
+
+      // Handle Escape key to deselect
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        selectShape(null)
+      }
+    }
+
+    // Add event listener to window to capture keyboard events globally
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedShapeId, deleteShape, selectShape, undo, redo])
 
   // Function to check if point is inside shape
   const isPointInShape = useCallback((point: { x: number; y: number }, shape: Shape): boolean => {
@@ -568,6 +612,13 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
         }}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        tabIndex={0} // Make canvas focusable
+        onFocus={() => {
+          // Optional: Add visual feedback when canvas is focused
+        }}
+        onBlur={() => {
+          // Optional: Remove visual feedback when canvas loses focus
+        }}
       />
     </div>
   )
