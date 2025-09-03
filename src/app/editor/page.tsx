@@ -1,9 +1,8 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { useEditorStore } from '@/store/useEditorStore'
-import Toolbar from '@/components/editor/Toolbar'
-import CanvasStage from '@/components/editor/CanvasStage'
 import PropertiesPanel from '@/components/editor/PropertiesPanel'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
@@ -15,6 +14,9 @@ import {
 } from '@/lib/exportUtils'
 import { ArrowLeft, Settings, Download, Save, FolderOpen } from 'lucide-react'
 import Link from 'next/link'
+
+const CanvasStage = dynamic(() => import('@/components/editor/ClientSideCanvasStage'), { ssr: false })
+const Toolbar = dynamic(() => import('@/components/editor/Toolbar'), { ssr: false })
 
 export default function EditorPage() {
   const canvasRef = useRef<HTMLDivElement>(null)

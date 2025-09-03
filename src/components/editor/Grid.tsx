@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Layer, Line } from 'react-konva'
+import { Layer, Line, loadKonva } from './KonvaComponents'
 
 interface GridProps {
   width: number
@@ -18,7 +18,7 @@ export const Grid: React.FC<GridProps> = ({
   color = '#e5e7eb',
   visible = true,
 }) => {
-  if (!visible || gridSize <= 0) {
+  if (!visible || gridSize <= 0 || !Layer || !Line) {
     return null
   }
 
@@ -28,37 +28,35 @@ export const Grid: React.FC<GridProps> = ({
   // Generate vertical lines
   for (let i = 0; i <= width; i += gridSize) {
     verticalLines.push(
-      <Line
-        key={`v-${i}`}
-        points={[i, 0, i, height]}
-        stroke={color}
-        strokeWidth={0.5}
-        opacity={0.5}
-        listening={false}
-      />
+      React.createElement(Line, {
+        key: `v-${i}`,
+        points: [i, 0, i, height],
+        stroke: color,
+        strokeWidth: 0.5,
+        opacity: 0.5,
+        listening: false,
+      })
     )
   }
 
   // Generate horizontal lines
   for (let i = 0; i <= height; i += gridSize) {
     horizontalLines.push(
-      <Line
-        key={`h-${i}`}
-        points={[0, i, width, i]}
-        stroke={color}
-        strokeWidth={0.5}
-        opacity={0.5}
-        listening={false}
-      />
+      React.createElement(Line, {
+        key: `h-${i}`,
+        points: [0, i, width, i],
+        stroke: color,
+        strokeWidth: 0.5,
+        opacity: 0.5,
+        listening: false,
+      })
     )
   }
 
-  return (
-    <Layer listening={false}>
-      {verticalLines}
-      {horizontalLines}
-    </Layer>
-  )
+  return React.createElement(Layer, {
+    listening: false,
+    children: [...verticalLines, ...horizontalLines]
+  })
 }
 
 export default Grid

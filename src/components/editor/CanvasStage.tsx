@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { Stage, Layer, Rect, Circle, Text, Line, Transformer } from 'react-konva'
-import Konva from 'konva'
+import { Stage, Layer, Rect, Circle, Text, Line, Transformer, Konva, loadKonva } from './KonvaComponents'
 import { useEditorStore } from '@/store/useEditorStore'
 import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
 import Grid from './Grid'
@@ -14,9 +13,10 @@ interface CanvasStageProps {
 }
 
 export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
-  const stageRef = useRef<Konva.Stage>(null)
-  const transformerRef = useRef<Konva.Transformer>(null)
+  const stageRef = useRef<any>(null)
+  const transformerRef = useRef<any>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [isKonvaLoaded, setIsKonvaLoaded] = useState(false)
 
   const {
     shapes,
@@ -28,19 +28,28 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     resizeShape,
   } = useEditorStore()
 
-  const checkDeselect = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+  useEffect(() => {
+    // Wait for Konva to load
+    loadKonva().then(() => {
+      setIsKonvaLoaded(true)
+    })
+  }, [])
+
+  const checkDeselect = useCallback((e: any) => {
+    if (!isKonvaLoaded) return
     const clickedOnEmpty = e.target === e.target.getStage()
     if (clickedOnEmpty) {
       setSelectedId(null)
       selectShape(null)
     }
-  }, [selectShape])
+  }, [selectShape, isKonvaLoaded])
 
   useEffect(() => {
     setSelectedId(selectedShapeId)
   }, [selectedShapeId])
 
   useEffect(() => {
+    if (!isKonvaLoaded) return
     if (selectedId && transformerRef.current) {
       const selectedNode = stageRef.current?.findOne(`#${selectedId}`)
       if (selectedNode) {
@@ -51,14 +60,15 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
       transformerRef.current.nodes([])
       transformerRef.current.getLayer()?.batchDraw()
     }
-  }, [selectedId])
+  }, [selectedId, isKonvaLoaded])
 
   const handleShapeSelect = useCallback((id: string) => {
     setSelectedId(id)
     selectShape(id)
   }, [selectShape])
 
-  const handleShapeDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>, shapeId: string) => {
+  const handleShapeDragEnd = useCallback((e: any, shapeId: string) => {
+    if (!isKonvaLoaded) return
     const node = e.target
     let newX = node.x()
     let newY = node.y()
@@ -70,9 +80,10 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     }
 
     moveShape(shapeId, { x: newX, y: newY })
-  }, [moveShape, canvasSettings.snapToGrid, canvasSettings.gridSize])
+  }, [moveShape, canvasSettings.snapToGrid, canvasSettings.gridSize, isKonvaLoaded])
 
-  const handleShapeTransform = useCallback((e: Konva.KonvaEventObject<Event>, shapeId: string) => {
+  const handleShapeTransform = useCallback((e: any, shapeId: string) => {
+    if (!isKonvaLoaded) return
     const node = e.target
     const scaleX = node.scaleX()
     const scaleY = node.scaleY()
@@ -91,9 +102,11 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     node.height(newHeight)
 
     resizeShape(shapeId, { width: newWidth, height: newHeight })
-  }, [resizeShape, canvasSettings.snapToGrid, canvasSettings.gridSize])
+  }, [resizeShape, canvasSettings.snapToGrid, canvasSettings.gridSize, isKonvaLoaded])
 
   const renderShape = (shape: Shape) => {
+    if (!isKonvaLoaded || !Rect || !Circle || !Text || !Line) return null
+
     const commonProps = {
       id: shape.id,
       x: shape.position.x,
@@ -104,80 +117,70 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
       draggable: !shape.locked,
       onClick: () => handleShapeSelect(shape.id),
       onTap: () => handleShapeSelect(shape.id),
-      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => handleShapeDragEnd(e, shape.id),
-      onTransformEnd: (e: Konva.KonvaEventObject<Event>) => handleShapeTransform(e, shape.id),
+      onDragEnd: (e: any) => handleShapeDragEnd(e, shape.id),
+      onTransformEnd: (e: any) => handleShapeTransform(e, shape.id),
     }
 
     switch (shape.type) {
       case 'rect': {
         const rectShape = shape as RectShape
-        return (
-          <Rect
-            key={shape.id}
-            {...commonProps}
-            width={shape.size.width}
-            height={shape.size.height}
-            fill={rectShape.fill}
-            stroke={rectShape.stroke}
-            strokeWidth={rectShape.strokeWidth}
-            cornerRadius={rectShape.cornerRadius}
-          />
-        )
+        return Rect ? React.createElement(Rect, {
+          key: shape.id,
+          ...commonProps,
+          width: shape.size.width,
+          height: shape.size.height,
+          fill: rectShape.fill,
+          stroke: rectShape.stroke,
+          strokeWidth: rectShape.strokeWidth,
+          cornerRadius: rectShape.cornerRadius,
+        }) : null
       }
 
       case 'circle': {
         const circleShape = shape as CircleShape
-        return (
-          <Circle
-            key={shape.id}
-            {...commonProps}
-            radius={circleShape.radius}
-            fill={circleShape.fill}
-            stroke={circleShape.stroke}
-            strokeWidth={circleShape.strokeWidth}
-          />
-        )
+        return Circle ? React.createElement(Circle, {
+          key: shape.id,
+          ...commonProps,
+          radius: circleShape.radius,
+          fill: circleShape.fill,
+          stroke: circleShape.stroke,
+          strokeWidth: circleShape.strokeWidth,
+        }) : null
       }
 
       case 'text': {
         const textShape = shape as TextShape
-        return (
-          <Text
-            key={shape.id}
-            {...commonProps}
-            width={shape.size.width}
-            height={shape.size.height}
-            text={textShape.text}
-            fontSize={textShape.fontSize}
-            fontFamily={textShape.fontFamily}
-            fontStyle={textShape.fontWeight === 'bold' ? 'bold' : 'normal'}
-            fontVariant={textShape.fontStyle === 'italic' ? 'italic' : 'normal'}
-            fill={textShape.fill}
-            stroke={textShape.stroke}
-            strokeWidth={textShape.strokeWidth}
-            align={textShape.align}
-            verticalAlign={textShape.verticalAlign}
-            lineHeight={textShape.lineHeight}
-            letterSpacing={textShape.letterSpacing}
-          />
-        )
+        return Text ? React.createElement(Text, {
+          key: shape.id,
+          ...commonProps,
+          width: shape.size.width,
+          height: shape.size.height,
+          text: textShape.text,
+          fontSize: textShape.fontSize,
+          fontFamily: textShape.fontFamily,
+          fontStyle: textShape.fontWeight === 'bold' ? 'bold' : 'normal',
+          fontVariant: textShape.fontStyle === 'italic' ? 'italic' : 'normal',
+          fill: textShape.fill,
+          stroke: textShape.stroke,
+          strokeWidth: textShape.strokeWidth,
+          align: textShape.align,
+          verticalAlign: textShape.verticalAlign,
+          lineHeight: textShape.lineHeight,
+          letterSpacing: textShape.letterSpacing,
+        }) : null
       }
 
       case 'triangle': {
         const triangleShape = shape as TriangleShape
-        return (
-          <Line
-            key={shape.id}
-            {...commonProps}
-            points={triangleShape.points.map((point, index) => 
-              index % 2 === 0 ? point + shape.position.x : point + shape.position.y
-            )}
-            fill={triangleShape.fill}
-            stroke={triangleShape.stroke}
-            strokeWidth={triangleShape.strokeWidth}
-            closed
-          />
-        )
+        return Line ? React.createElement(Line, {
+          key: shape.id,
+          ...commonProps,
+          points: triangleShape.points,
+          fill: triangleShape.fill,
+          stroke: triangleShape.stroke,
+          strokeWidth: triangleShape.strokeWidth,
+          closed: true,
+        }) : null
       }
 
       default:
@@ -185,68 +188,88 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     }
   }
 
+  if (!isKonvaLoaded || !Stage || !Layer) {
+    return (
+      <div 
+        className="canvas-container border border-gray-300 bg-white shadow-lg overflow-hidden flex items-center justify-center"
+        style={{ width, height }}
+      >
+        <div className="text-gray-500">Loading Konva Canvas...</div>
+      </div>
+    )
+  }
+
   return (
     <div 
       className="canvas-container border border-gray-300 bg-white shadow-lg overflow-hidden"
       style={{ width, height }}
     >
-      <Stage
-        ref={stageRef}
-        width={width}
-        height={height}
-        onMouseDown={checkDeselect}
-        onTouchStart={checkDeselect}
-      >
-        {/* Background */}
-        <Layer>
-          <Rect
-            x={0}
-            y={0}
-            width={canvasSettings.width}
-            height={canvasSettings.height}
-            fill={canvasSettings.backgroundColor}
-            listening={false}
-          />
-        </Layer>
-
-        {/* Grid */}
-        <Grid
-          width={canvasSettings.width}
-          height={canvasSettings.height}
-          gridSize={canvasSettings.gridSize}
-          color={canvasSettings.gridColor}
-          visible={canvasSettings.showGrid}
-        />
-
-        {/* Shapes */}
-        <Layer>
-          {shapes
-            .sort((a, b) => a.zIndex - b.zIndex)
-            .map(renderShape)}
+      {Stage && React.createElement(Stage, {
+        ref: stageRef,
+        width: width,
+        height: height,
+        onMouseDown: checkDeselect,
+        onTouchStart: checkDeselect,
+        children: [
+          // Background Layer
+          Layer && React.createElement(Layer, {
+            key: 'background',
+            children: [
+              Rect && React.createElement(Rect, {
+                x: 0,
+                y: 0,
+                width: canvasSettings.width,
+                height: canvasSettings.height,
+                fill: canvasSettings.backgroundColor,
+                listening: false,
+              })
+            ]
+          }),
           
-          {/* Transformer */}
-          <Transformer
-            ref={transformerRef}
-            keepRatio={false}
-            enabledAnchors={[
-              'top-left',
-              'top-center', 
-              'top-right',
-              'middle-right',
-              'bottom-right',
-              'bottom-center',
-              'bottom-left',
-              'middle-left',
-            ]}
-            borderStroke="#0ea5e9"
-            borderStrokeWidth={1}
-            anchorFill="#0ea5e9"
-            anchorStroke="#0369a1"
-            anchorSize={8}
-            anchorCornerRadius={2}
-          />
-        </Layer>
-      </Stage>
+          // Grid
+          React.createElement(Grid, {
+            key: 'grid',
+            width: canvasSettings.width,
+            height: canvasSettings.height,
+            gridSize: canvasSettings.gridSize,
+            color: canvasSettings.gridColor,
+            visible: canvasSettings.showGrid,
+          }),
+          
+          // Shapes Layer
+          Layer && React.createElement(Layer, {
+            key: 'shapes',
+            children: [
+              ...shapes
+                .sort((a, b) => a.zIndex - b.zIndex)
+                .map(renderShape)
+                .filter(Boolean),
+              
+              // Transformer
+              Transformer && React.createElement(Transformer, {
+                ref: transformerRef,
+                keepRatio: false,
+                enabledAnchors: [
+                  'top-left',
+                  'top-center', 
+                  'top-right',
+                  'middle-right',
+                  'bottom-right',
+                  'bottom-center',
+                  'bottom-left',
+                  'middle-left',
+                ],
+                borderStroke: "#0ea5e9",
+                borderStrokeWidth: 1,
+                anchorFill: "#0ea5e9",
+                anchorStroke: "#0369a1",
+                anchorSize: 8,
+                anchorCornerRadius: 2,
+              })
+            ]
+          })
+        ].filter(Boolean)
+      })}
     </div>
   )
 }
