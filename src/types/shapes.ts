@@ -10,7 +10,7 @@ export interface Size {
 
 export interface BaseShape {
   id: string
-  type: 'rect' | 'circle' | 'text' | 'triangle' | 'image'
+  type: 'rect' | 'circle' | 'text' | 'triangle' | 'image' | 'person' | 'qr' | 'barcode'
   position: Position
   size: Size
   rotation: number
@@ -69,7 +69,32 @@ export interface ImageShape extends BaseShape {
   cropHeight: number
 }
 
-export type Shape = RectShape | CircleShape | TextShape | TriangleShape | ImageShape
+export interface PersonShape extends BaseShape {
+  type: 'person'
+  src?: string
+  placeholder: boolean
+  borderRadius: number
+  borderWidth: number
+  borderColor: string
+}
+
+export interface QRShape extends BaseShape {
+  type: 'qr'
+  data: string
+  size: Size
+  backgroundColor: string
+  foregroundColor: string
+}
+
+export interface BarcodeShape extends BaseShape {
+  type: 'barcode'
+  data: string
+  format: '128' | 'CODE39' | 'EAN13' | 'UPC'
+  backgroundColor: string
+  lineColor: string
+}
+
+export type Shape = RectShape | CircleShape | TextShape | TriangleShape | ImageShape | PersonShape | QRShape | BarcodeShape
 
 export interface CanvasSettings {
   width: number

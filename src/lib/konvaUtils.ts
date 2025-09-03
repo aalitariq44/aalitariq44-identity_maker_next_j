@@ -1,4 +1,4 @@
-import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
+import type { Shape, RectShape, CircleShape, TextShape, TriangleShape, PersonShape, QRShape, BarcodeShape } from '@/types/shapes'
 
 export const createDefaultRect = (x: number = 100, y: number = 100): Omit<RectShape, 'id'> => ({
   type: 'rect',
@@ -66,6 +66,51 @@ export const createDefaultTriangle = (x: number = 100, y: number = 100): Omit<Tr
   stroke: '#059669',
   strokeWidth: 2,
   points: [50, 0, 0, 100, 100, 100],
+})
+
+export const createDefaultPerson = (x: number = 100, y: number = 100): Omit<PersonShape, 'id'> => ({
+  type: 'person',
+  position: { x, y },
+  size: { width: 120, height: 150 },
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  zIndex: 1,
+  src: undefined,
+  placeholder: true,
+  borderRadius: 8,
+  borderWidth: 2,
+  borderColor: '#6b7280',
+})
+
+export const createDefaultQR = (x: number = 100, y: number = 100): Omit<QRShape, 'id'> => ({
+  type: 'qr',
+  position: { x, y },
+  size: { width: 100, height: 100 },
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  zIndex: 1,
+  data: 'https://example.com',
+  backgroundColor: '#ffffff',
+  foregroundColor: '#000000',
+})
+
+export const createDefaultBarcode = (x: number = 100, y: number = 100): Omit<BarcodeShape, 'id'> => ({
+  type: 'barcode',
+  position: { x, y },
+  size: { width: 200, height: 50 },
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  zIndex: 1,
+  data: '123456789012',
+  format: '128',
+  backgroundColor: '#ffffff',
+  lineColor: '#000000',
 })
 
 export const snapToGrid = (value: number, gridSize: number): number => {

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { useEditorStore } from '@/store/useEditorStore'
-import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
+import type { Shape, RectShape, CircleShape, TextShape, TriangleShape, PersonShape, QRShape, BarcodeShape } from '@/types/shapes'
 import { SketchPicker } from 'react-color'
 
 export const PropertiesPanel: React.FC = () => {
@@ -232,6 +232,12 @@ export const PropertiesPanel: React.FC = () => {
         return <TextProperties shape={selectedShape as TextShape} />
       case 'triangle':
         return <TriangleProperties shape={selectedShape as TriangleShape} />
+      case 'person':
+        return <PersonProperties shape={selectedShape as PersonShape} />
+      case 'qr':
+        return <QRProperties shape={selectedShape as QRShape} />
+      case 'barcode':
+        return <BarcodeProperties shape={selectedShape as BarcodeShape} />
       default:
         return null
     }
@@ -246,6 +252,9 @@ export const PropertiesPanel: React.FC = () => {
           {selectedShape.type === 'circle' && 'دائرة'}
           {selectedShape.type === 'text' && 'نص'}
           {selectedShape.type === 'triangle' && 'مثلث'}
+          {selectedShape.type === 'person' && 'صورة شخصية'}
+          {selectedShape.type === 'qr' && 'رمز QR'}
+          {selectedShape.type === 'barcode' && 'باركود'}
         </p>
       </div>
 
@@ -712,6 +721,301 @@ const TriangleProperties: React.FC<{ shape: TriangleShape }> = ({ shape }) => {
           onChange={(e) => updateShape(shape.id, { strokeWidth: parseFloat(e.target.value) || 0 })}
           className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+    </div>
+  )
+}
+
+const PersonProperties: React.FC<{ shape: PersonShape }> = ({ shape }) => {
+  const { updateShape } = useEditorStore()
+  const [showColorPicker, setShowColorPicker] = React.useState<string | null>(null)
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string
+        updateShape(shape.id, { 
+          src: imageUrl,
+          placeholder: false
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <h4 className="font-medium text-gray-700 border-b pb-2">خصائص الصورة الشخصية</h4>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">رابط الصورة</label>
+        <input
+          type="text"
+          placeholder="https://example.com/image.jpg"
+          value={shape.src || ''}
+          onChange={(e) => updateShape(shape.id, { 
+            src: e.target.value || undefined,
+            placeholder: !e.target.value
+          })}
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">أو رفع صورة</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      {shape.src && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">معاينة الصورة</label>
+          <div className="w-full h-32 border border-gray-300 rounded overflow-hidden bg-gray-50 flex items-center justify-center">
+            <img
+              src={shape.src}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain"
+              onError={() => updateShape(shape.id, { placeholder: true })}
+            />
+          </div>
+          <button
+            onClick={() => updateShape(shape.id, { src: undefined, placeholder: true })}
+            className="mt-2 px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+          >
+            حذف الصورة
+          </button>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">نصف قطر الحواف</label>
+        <input
+          type="number"
+          min="0"
+          value={shape.borderRadius}
+          onChange={(e) => updateShape(shape.id, { borderRadius: parseFloat(e.target.value) || 0 })}
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">سماكة الحدود</label>
+        <input
+          type="number"
+          min="0"
+          value={shape.borderWidth}
+          onChange={(e) => updateShape(shape.id, { borderWidth: parseFloat(e.target.value) || 0 })}
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">لون الحدود</label>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+            style={{ backgroundColor: shape.borderColor }}
+            onClick={() => setShowColorPicker('border')}
+          />
+          <input
+            type="text"
+            value={shape.borderColor}
+            onChange={(e) => updateShape(shape.id, { borderColor: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {showColorPicker === 'border' && (
+          <div className="absolute z-10 mt-2">
+            <div
+              className="fixed inset-0"
+              onClick={() => setShowColorPicker(null)}
+            />
+            <SketchPicker
+              color={shape.borderColor}
+              onChange={(color) => updateShape(shape.id, { borderColor: color.hex })}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const QRProperties: React.FC<{ shape: QRShape }> = ({ shape }) => {
+  const { updateShape } = useEditorStore()
+  const [showColorPicker, setShowColorPicker] = React.useState<string | null>(null)
+
+  return (
+    <div className="space-y-4">
+      <h4 className="font-medium text-gray-700 border-b pb-2">خصائص رمز QR</h4>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">البيانات/الرابط</label>
+        <textarea
+          value={shape.data}
+          onChange={(e) => updateShape(shape.id, { data: e.target.value })}
+          placeholder="https://example.com أو أي نص"
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          rows={3}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">لون الخلفية</label>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+            style={{ backgroundColor: shape.backgroundColor }}
+            onClick={() => setShowColorPicker('background')}
+          />
+          <input
+            type="text"
+            value={shape.backgroundColor}
+            onChange={(e) => updateShape(shape.id, { backgroundColor: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {showColorPicker === 'background' && (
+          <div className="absolute z-10 mt-2">
+            <div
+              className="fixed inset-0"
+              onClick={() => setShowColorPicker(null)}
+            />
+            <SketchPicker
+              color={shape.backgroundColor}
+              onChange={(color) => updateShape(shape.id, { backgroundColor: color.hex })}
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">لون الرمز</label>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+            style={{ backgroundColor: shape.foregroundColor }}
+            onClick={() => setShowColorPicker('foreground')}
+          />
+          <input
+            type="text"
+            value={shape.foregroundColor}
+            onChange={(e) => updateShape(shape.id, { foregroundColor: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {showColorPicker === 'foreground' && (
+          <div className="absolute z-10 mt-2">
+            <div
+              className="fixed inset-0"
+              onClick={() => setShowColorPicker(null)}
+            />
+            <SketchPicker
+              color={shape.foregroundColor}
+              onChange={(color) => updateShape(shape.id, { foregroundColor: color.hex })}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const BarcodeProperties: React.FC<{ shape: BarcodeShape }> = ({ shape }) => {
+  const { updateShape } = useEditorStore()
+  const [showColorPicker, setShowColorPicker] = React.useState<string | null>(null)
+
+  return (
+    <div className="space-y-4">
+      <h4 className="font-medium text-gray-700 border-b pb-2">خصائص الباركود</h4>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">البيانات</label>
+        <input
+          type="text"
+          value={shape.data}
+          onChange={(e) => updateShape(shape.id, { data: e.target.value })}
+          placeholder="123456789012"
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">نوع الباركود</label>
+        <select
+          value={shape.format}
+          onChange={(e) => updateShape(shape.id, { format: e.target.value as '128' | 'CODE39' | 'EAN13' | 'UPC' })}
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="128">Code 128</option>
+          <option value="CODE39">Code 39</option>
+          <option value="EAN13">EAN-13</option>
+          <option value="UPC">UPC</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">لون الخلفية</label>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+            style={{ backgroundColor: shape.backgroundColor }}
+            onClick={() => setShowColorPicker('background')}
+          />
+          <input
+            type="text"
+            value={shape.backgroundColor}
+            onChange={(e) => updateShape(shape.id, { backgroundColor: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {showColorPicker === 'background' && (
+          <div className="absolute z-10 mt-2">
+            <div
+              className="fixed inset-0"
+              onClick={() => setShowColorPicker(null)}
+            />
+            <SketchPicker
+              color={shape.backgroundColor}
+              onChange={(color) => updateShape(shape.id, { backgroundColor: color.hex })}
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">لون الخطوط</label>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+            style={{ backgroundColor: shape.lineColor }}
+            onClick={() => setShowColorPicker('lines')}
+          />
+          <input
+            type="text"
+            value={shape.lineColor}
+            onChange={(e) => updateShape(shape.id, { lineColor: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {showColorPicker === 'lines' && (
+          <div className="absolute z-10 mt-2">
+            <div
+              className="fixed inset-0"
+              onClick={() => setShowColorPicker(null)}
+            />
+            <SketchPicker
+              color={shape.lineColor}
+              onChange={(color) => updateShape(shape.id, { lineColor: color.hex })}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

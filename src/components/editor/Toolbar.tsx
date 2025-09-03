@@ -18,13 +18,19 @@ import {
   ZoomIn,
   ZoomOut,
   Move,
-  MousePointer
+  MousePointer,
+  User,
+  QrCode,
+  ScanLine
 } from 'lucide-react'
 import {
   createDefaultRect,
   createDefaultCircle,
   createDefaultText,
   createDefaultTriangle,
+  createDefaultPerson,
+  createDefaultQR,
+  createDefaultBarcode,
 } from '@/lib/konvaUtils'
 
 interface ToolbarProps {
@@ -99,6 +105,33 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
     console.log('Triangle created:', triangle)
     addShape(triangle)
     console.log('Triangle added to store')
+  }
+
+  const handleAddPerson = () => {
+    console.log('Adding person placeholder...')
+    const position = getNextShapePosition()
+    const person = createDefaultPerson(position.x, position.y)
+    console.log('Person created:', person)
+    addShape(person)
+    console.log('Person added to store')
+  }
+
+  const handleAddQR = () => {
+    console.log('Adding QR code...')
+    const position = getNextShapePosition()
+    const qr = createDefaultQR(position.x, position.y)
+    console.log('QR created:', qr)
+    addShape(qr)
+    console.log('QR added to store')
+  }
+
+  const handleAddBarcode = () => {
+    console.log('Adding barcode...')
+    const position = getNextShapePosition()
+    const barcode = createDefaultBarcode(position.x, position.y)
+    console.log('Barcode created:', barcode)
+    addShape(barcode)
+    console.log('Barcode added to store')
   }
 
   const handleDeleteSelected = () => {
@@ -202,6 +235,35 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
                 className="hidden"
               />
             </label>
+          </div>
+
+          {/* Identity Elements */}
+          <div className="flex items-center gap-1 border-r border-gray-300 pr-4">
+            <span className="text-xs text-gray-500 font-medium mr-2">عناصر الهوية</span>
+            
+            <button
+              onClick={handleAddPerson}
+              className="p-2 rounded hover:bg-purple-50 hover:text-purple-600 transition-colors"
+              title="إضافة صورة شخصية للهوية"
+            >
+              <User className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleAddQR}
+              className="p-2 rounded hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+              title="إضافة رمز QR"
+            >
+              <QrCode className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={handleAddBarcode}
+              className="p-2 rounded hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              title="إضافة باركود"
+            >
+              <ScanLine className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Edit Tools */}

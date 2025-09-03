@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useEditorStore } from '@/store/useEditorStore'
 import PropertiesPanel from '@/components/editor/PropertiesPanel'
+import LayersPanel from '@/components/editor/LayersPanel'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
 import { 
@@ -12,8 +13,13 @@ import {
   saveProjectAsJSON, 
   loadProjectFromJSON 
 } from '@/lib/exportUtils'
-import { ArrowLeft, Settings, Download, Save, FolderOpen } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Save, FolderOpen, User, QrCode, ScanLine } from 'lucide-react'
 import Link from 'next/link'
+import { 
+  createDefaultPerson, 
+  createDefaultQR, 
+  createDefaultBarcode 
+} from '@/lib/konvaUtils'
 
 const CanvasStage = dynamic(() => import('@/components/editor/SimpleCanvasStage'), { ssr: false })
 const Toolbar = dynamic(() => import('@/components/editor/Toolbar'), { ssr: false })
@@ -30,6 +36,8 @@ export default function EditorPage() {
     toggleOrientation,
     saveProject,
     loadProject,
+    addShape,
+    shapes,
   } = useEditorStore()
 
   const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
@@ -86,6 +94,62 @@ export default function EditorPage() {
     setShowSettingsModal(false)
   }
 
+  // Helper function to get a good position for new shapes
+  const getNextShapePosition = () => {
+    const baseX = 100
+    const baseY = 100
+    const offset = shapes.length * 30 // Offset each new shape by 30px
+    
+    // Keep shapes within canvas bounds
+    const x = baseX + (offset % (canvasSettings.width - 200))
+    const y = baseY + (Math.floor(offset / (canvasSettings.width - 200)) * 30) % (canvasSettings.height - 200)
+    
+    return { x, y }
+  }
+
+  const handleAddPerson = () => {
+    const position = getNextShapePosition()
+    const person = createDefaultPerson(position.x, position.y)
+    addShape(person)
+  }
+
+  const handleAddQR = () => {
+    const position = getNextShapePosition()
+    const qr = createDefaultQR(position.x, position.y)
+    addShape(qr)
+  }
+
+  const handleAddBarcode = () => {
+    const position = getNextShapePosition()
+    const barcode = createDefaultBarcode(position.x, position.y)
+    addShape(barcode)
+  }
+
+  // Handle keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'p':
+            e.preventDefault()
+            handleAddPerson()
+            break
+          case 'q':
+            e.preventDefault()
+            handleAddQR()
+            break
+          case 'b':
+            e.preventDefault()
+            handleAddBarcode()
+            break
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [shapes.length, canvasSettings.width, canvasSettings.height])
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -105,6 +169,38 @@ export default function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Identity Elements Section */}
+          <div className="flex items-center gap-2 border-r border-gray-300 pr-4">
+            <span className="text-sm font-medium text-gray-600 ml-2">عناصر الهوية:</span>
+            
+            <button 
+              onClick={handleAddPerson}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
+              title="إضافة صورة شخصية للهوية (Alt+P)"
+            >
+              <User className="w-4 h-4" />
+              صورة شخص
+            </button>
+            
+            <button 
+              onClick={handleAddQR}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+              title="إضافة رمز QR للهوية (Alt+Q)"
+            >
+              <QrCode className="w-4 h-4" />
+              QR كود
+            </button>
+            
+            <button 
+              onClick={handleAddBarcode}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors"
+              title="إضافة باركود للهوية (Alt+B)"
+            >
+              <ScanLine className="w-4 h-4" />
+              باركود
+            </button>
+          </div>
+
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -158,8 +254,14 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Properties Panel */}
-        <PropertiesPanel />
+        {/* Right Panel - Properties and Layers */}
+        <div className="flex">
+          {/* Properties Panel */}
+          <PropertiesPanel />
+          
+          {/* Layers Panel */}
+          <LayersPanel className="w-80" />
+        </div>
       </div>
 
       {/* Export Modal */}

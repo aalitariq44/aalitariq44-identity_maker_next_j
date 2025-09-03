@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { useEditorStore } from '@/store/useEditorStore'
-import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
+import type { Shape, RectShape, CircleShape, TextShape, TriangleShape, PersonShape, QRShape, BarcodeShape } from '@/types/shapes'
 import { snapToGrid } from '@/lib/konvaUtils'
 
 interface SimpleCanvasStageProps {
@@ -110,6 +110,16 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
         )
       case 'triangle':
         // Simple triangle bounds check
+        return (
+          point.x >= shape.position.x &&
+          point.x <= shape.position.x + shape.size.width &&
+          point.y >= shape.position.y &&
+          point.y <= shape.position.y + shape.size.height
+        )
+      case 'person':
+      case 'qr':
+      case 'barcode':
+        // Rectangle bounds check for identity elements
         return (
           point.x >= shape.position.x &&
           point.x <= shape.position.x + shape.size.width &&
@@ -519,6 +529,29 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
     context.fillStyle = canvasSettings.backgroundColor
     context.fillRect(0, 0, canvasSettings.width, canvasSettings.height)
     
+    // Draw grid if enabled
+    if (canvasSettings.showGrid) {
+      context.strokeStyle = canvasSettings.gridColor
+      context.lineWidth = 1
+      context.setLineDash([])
+      
+      // Vertical lines
+      for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
+        context.beginPath()
+        context.moveTo(x, 0)
+        context.lineTo(x, canvasSettings.height)
+        context.stroke()
+      }
+      
+      // Horizontal lines
+      for (let y = 0; y <= canvasSettings.height; y += canvasSettings.gridSize) {
+        context.beginPath()
+        context.moveTo(0, y)
+        context.lineTo(canvasSettings.width, y)
+        context.stroke()
+      }
+    }
+    
     console.log('Drawing background:', canvasSettings.backgroundColor)
     console.log('Shapes to draw:', shapes.length)
     
@@ -576,6 +609,177 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
           context.lineWidth = triangleShape.strokeWidth
           if (triangleShape.strokeWidth > 0) {
             context.stroke()
+          }
+          break
+
+        case 'person':
+          const personShape = shape as PersonShape
+          
+          // Draw border/background
+          context.fillStyle = '#f3f4f6'
+          context.strokeStyle = personShape.borderColor
+          context.lineWidth = personShape.borderWidth
+          
+          if (personShape.borderRadius > 0) {
+            // Draw rounded rectangle
+            const radius = Math.min(personShape.borderRadius, shape.size.width / 2, shape.size.height / 2)
+            context.beginPath()
+            context.roundRect(0, 0, shape.size.width, shape.size.height, radius)
+            context.fill()
+            if (personShape.borderWidth > 0) {
+              context.stroke()
+            }
+          } else {
+            context.fillRect(0, 0, shape.size.width, shape.size.height)
+            if (personShape.borderWidth > 0) {
+              context.strokeRect(0, 0, shape.size.width, shape.size.height)
+            }
+          }
+          
+          // Draw placeholder icon or image
+          if (personShape.src && !personShape.placeholder) {
+            // Create image element and draw it
+            const img = new Image()
+            img.onload = () => {
+              context.save()
+              
+              // Clip to the shape bounds with border radius if needed
+              if (personShape.borderRadius > 0) {
+                const radius = Math.min(personShape.borderRadius, shape.size.width / 2, shape.size.height / 2)
+                context.beginPath()
+                context.roundRect(0, 0, shape.size.width, shape.size.height, radius)
+                context.clip()
+              }
+              
+              // Calculate how to fit the image within the shape
+              const imgAspect = img.width / img.height
+              const shapeAspect = shape.size.width / shape.size.height
+              
+              let drawWidth, drawHeight, drawX, drawY
+              
+              if (imgAspect > shapeAspect) {
+                // Image is wider than shape, fit by height
+                drawHeight = shape.size.height
+                drawWidth = drawHeight * imgAspect
+                drawX = (shape.size.width - drawWidth) / 2
+                drawY = 0
+              } else {
+                // Image is taller than shape, fit by width
+                drawWidth = shape.size.width
+                drawHeight = drawWidth / imgAspect
+                drawX = 0
+                drawY = (shape.size.height - drawHeight) / 2
+              }
+              
+              context.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+              context.restore()
+            }
+            img.src = personShape.src
+          } else {
+            // Draw person icon placeholder
+            context.fillStyle = '#9ca3af'
+            const iconSize = Math.min(shape.size.width, shape.size.height) * 0.5
+            const iconX = (shape.size.width - iconSize) / 2
+            const iconY = (shape.size.height - iconSize) / 2
+            
+            // Simple person icon (head + body)
+            const headRadius = iconSize * 0.2
+            const headX = iconX + iconSize / 2
+            const headY = iconY + headRadius
+            
+            // Draw head
+            context.beginPath()
+            context.arc(headX, headY, headRadius, 0, 2 * Math.PI)
+            context.fill()
+            
+            // Draw body
+            const bodyWidth = iconSize * 0.6
+            const bodyHeight = iconSize * 0.5
+            const bodyX = iconX + (iconSize - bodyWidth) / 2
+            const bodyY = headY + headRadius + 5
+            
+            context.fillRect(bodyX, bodyY, bodyWidth, bodyHeight)
+          }
+          break
+
+        case 'qr':
+          const qrShape = shape as QRShape
+          
+          // Draw background
+          context.fillStyle = qrShape.backgroundColor
+          context.fillRect(0, 0, shape.size.width, shape.size.height)
+          
+          // Draw QR code pattern (simplified)
+          context.fillStyle = qrShape.foregroundColor
+          const qrSize = Math.min(shape.size.width, shape.size.height)
+          const moduleSize = qrSize / 25 // 25x25 grid
+          
+          // Draw finder patterns (corners)
+          const finderSize = moduleSize * 7
+          
+          // Top-left finder
+          context.fillRect(0, 0, finderSize, finderSize)
+          context.fillStyle = qrShape.backgroundColor
+          context.fillRect(moduleSize, moduleSize, finderSize - 2 * moduleSize, finderSize - 2 * moduleSize)
+          context.fillStyle = qrShape.foregroundColor
+          context.fillRect(moduleSize * 2, moduleSize * 2, finderSize - 4 * moduleSize, finderSize - 4 * moduleSize)
+          
+          // Top-right finder
+          const topRightX = shape.size.width - finderSize
+          context.fillRect(topRightX, 0, finderSize, finderSize)
+          context.fillStyle = qrShape.backgroundColor
+          context.fillRect(topRightX + moduleSize, moduleSize, finderSize - 2 * moduleSize, finderSize - 2 * moduleSize)
+          context.fillStyle = qrShape.foregroundColor
+          context.fillRect(topRightX + moduleSize * 2, moduleSize * 2, finderSize - 4 * moduleSize, finderSize - 4 * moduleSize)
+          
+          // Bottom-left finder
+          const bottomLeftY = shape.size.height - finderSize
+          context.fillRect(0, bottomLeftY, finderSize, finderSize)
+          context.fillStyle = qrShape.backgroundColor
+          context.fillRect(moduleSize, bottomLeftY + moduleSize, finderSize - 2 * moduleSize, finderSize - 2 * moduleSize)
+          context.fillStyle = qrShape.foregroundColor
+          context.fillRect(moduleSize * 2, bottomLeftY + moduleSize * 2, finderSize - 4 * moduleSize, finderSize - 4 * moduleSize)
+          
+          // Draw some random modules for QR appearance
+          context.fillStyle = qrShape.foregroundColor
+          for (let i = 0; i < 50; i++) {
+            const randomX = Math.floor(Math.random() * (shape.size.width / moduleSize)) * moduleSize
+            const randomY = Math.floor(Math.random() * (shape.size.height / moduleSize)) * moduleSize
+            context.fillRect(randomX, randomY, moduleSize, moduleSize)
+          }
+          break
+
+        case 'barcode':
+          const barcodeShape = shape as BarcodeShape
+          
+          // Draw background
+          context.fillStyle = barcodeShape.backgroundColor
+          context.fillRect(0, 0, shape.size.width, shape.size.height)
+          
+          // Draw barcode lines
+          context.fillStyle = barcodeShape.lineColor
+          const lineWidth = shape.size.width / 50 // 50 bars
+          
+          for (let i = 0; i < 50; i++) {
+            // Alternate thick and thin lines randomly for barcode appearance
+            const currentLineWidth = Math.random() > 0.5 ? lineWidth : lineWidth * 0.5
+            const x = i * lineWidth
+            
+            if (Math.random() > 0.4) { // Don't draw every line
+              context.fillRect(x, 0, currentLineWidth, shape.size.height)
+            }
+          }
+          
+          // Draw text below if there's space
+          if (shape.size.height > 30) {
+            context.fillStyle = barcodeShape.lineColor
+            context.font = '10px monospace'
+            context.textAlign = 'center'
+            context.fillText(
+              barcodeShape.data, 
+              shape.size.width / 2, 
+              shape.size.height - 5
+            )
           }
           break
       }
