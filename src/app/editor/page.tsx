@@ -169,38 +169,6 @@ export default function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Identity Elements Section */}
-          <div className="flex items-center gap-2 border-r border-gray-300 pr-4">
-            <span className="text-sm font-medium text-gray-600 ml-2">عناصر الهوية:</span>
-            
-            <button 
-              onClick={handleAddPerson}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
-              title="إضافة صورة شخصية للهوية (Alt+P)"
-            >
-              <User className="w-4 h-4" />
-              صورة شخص
-            </button>
-            
-            <button 
-              onClick={handleAddQR}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
-              title="إضافة رمز QR للهوية (Alt+Q)"
-            >
-              <QrCode className="w-4 h-4" />
-              QR كود
-            </button>
-            
-            <button 
-              onClick={handleAddBarcode}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors"
-              title="إضافة باركود للهوية (Alt+B)"
-            >
-              <ScanLine className="w-4 h-4" />
-              باركود
-            </button>
-          </div>
-
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
