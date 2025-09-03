@@ -30,28 +30,35 @@ export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<Circ
   radius: 50,
 })
 
-export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextShape, 'id'> => ({
-  type: 'text',
-  position: { x, y },
-  size: { width: 200, height: 60 },
-  rotation: 0,
-  opacity: 1,
-  visible: true,
-  locked: false,
-  zIndex: 1,
-  text: 'نص جديد',
-  fontSize: 18,
-  fontFamily: 'Arial',
-  fontWeight: 'normal',
-  fontStyle: 'normal',
-  fill: '#1f2937',
-  stroke: '',
-  strokeWidth: 0,
-  align: 'center',
-  verticalAlign: 'middle',
-  lineHeight: 1.2,
-  letterSpacing: 0,
-})
+export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextShape, 'id'> => {
+  const text = 'نص جديد'
+  const fontSize = 18
+  const fontFamily = 'Arial'
+  const dimensions = calculateTextDimensions(text, fontSize, fontFamily)
+
+  return {
+    type: 'text',
+    position: { x, y },
+    size: dimensions,
+    rotation: 0,
+    opacity: 1,
+    visible: true,
+    locked: false,
+    zIndex: 1,
+    text,
+    fontSize,
+    fontFamily,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    fill: '#1f2937',
+    stroke: '',
+    strokeWidth: 0,
+    align: 'center',
+    verticalAlign: 'middle',
+    lineHeight: 1.2,
+    letterSpacing: 0,
+  }
+}
 
 export const createDefaultTriangle = (x: number = 100, y: number = 100): Omit<TriangleShape, 'id'> => ({
   type: 'triangle',
@@ -115,6 +122,19 @@ export const createDefaultBarcode = (x: number = 100, y: number = 100): Omit<Bar
 
 export const snapToGrid = (value: number, gridSize: number): number => {
   return Math.round(value / gridSize) * gridSize
+}
+
+export const calculateTextDimensions = (text: string, fontSize: number, fontFamily: string): { width: number; height: number } => {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return { width: 200, height: 60 }
+
+  ctx.font = `${fontSize}px ${fontFamily}`
+  const metrics = ctx.measureText(text)
+  const width = Math.max(metrics.width, 50) // Minimum width
+  const height = fontSize * 1.2 // Line height approximation
+
+  return { width, height }
 }
 
 export const getShapeBounds = (shape: Shape) => {

@@ -5,6 +5,7 @@ import { immer } from 'zustand/middleware/immer'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { Shape, EditorState, CanvasSettings } from '@/types/shapes'
 import { nanoid } from 'nanoid'
+import { calculateTextDimensions } from '@/lib/konvaUtils'
 
 interface EditorStore extends EditorState {
   // Actions
@@ -101,6 +102,17 @@ export const useEditorStore = create<EditorStore>()(
             zIndex: maxZIndex + 1,
           } as Shape
           
+          // If this is a text shape, ensure dimensions are correct
+          if (newShape.type === 'text') {
+            const textShape = newShape as any
+            const dimensions = calculateTextDimensions(
+              textShape.text,
+              textShape.fontSize,
+              textShape.fontFamily
+            )
+            newShape.size = dimensions
+          }
+          
           console.log('Store: New shape created', newShape)
           
           // Save current state to history before adding new shape
@@ -122,6 +134,8 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shapeIndex = state.shapes.findIndex((s) => s.id === id)
           if (shapeIndex !== -1) {
+            const shape = state.shapes[shapeIndex]
+            
             // Save to history for significant changes (not for every small movement)
             const significantChanges = ['fill', 'stroke', 'strokeWidth', 'text', 'fontSize', 'fontFamily', 'visible', 'locked']
             const hasSignificantChange = significantChanges.some(key => key in updates)
@@ -131,7 +145,19 @@ export const useEditorStore = create<EditorStore>()(
               state.history.future = []
             }
             
+            // Update the shape
             Object.assign(state.shapes[shapeIndex], updates)
+            
+            // If this is a text shape and text/font properties changed, recalculate dimensions
+            if (shape.type === 'text' && ('text' in updates || 'fontSize' in updates || 'fontFamily' in updates)) {
+              const textShape = state.shapes[shapeIndex] as any
+              const dimensions = calculateTextDimensions(
+                textShape.text,
+                textShape.fontSize,
+                textShape.fontFamily
+              )
+              state.shapes[shapeIndex].size = dimensions
+            }
           }
         })
       },
@@ -295,6 +321,20 @@ export const useEditorStore = create<EditorStore>()(
           const projectData = JSON.parse(jsonData)
           set((state) => {
             state.shapes = projectData.shapes || []
+            
+            // Recalculate text dimensions for all text shapes
+            state.shapes.forEach(shape => {
+              if (shape.type === 'text') {
+                const textShape = shape as any
+                const dimensions = calculateTextDimensions(
+                  textShape.text,
+                  textShape.fontSize,
+                  textShape.fontFamily
+                )
+                shape.size = dimensions
+              }
+            })
+            
             state.canvasSettings = {
               ...initialCanvasSettings,
               ...projectData.canvasSettings,
