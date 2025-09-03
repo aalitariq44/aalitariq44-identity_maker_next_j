@@ -794,7 +794,10 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
           const textShape = shape as any
           context.font = `${textShape.fontSize / canvasSettings.zoom}px ${textShape.fontFamily}`
           context.fillStyle = textShape.fill
-          context.fillText(textShape.text, 0, textShape.fontSize / canvasSettings.zoom)
+          // align text to top-left so bounding box matches
+          context.textAlign = 'left'
+          context.textBaseline = 'top'
+          context.fillText(textShape.text, 0, 0)
           break
           
         // ... other shape types remain the same
