@@ -6,7 +6,8 @@ import { useEditorStore } from '@/store/useEditorStore'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
 import CustomSizeModal from '@/components/editor/CustomSizeModal'
-import ImageUploader from '@/components/editor/ImageUploader'
+import AdvancedImageUploader from '@/components/editor/AdvancedImageUploader'
+import QRBarcodeGenerator from '@/components/editor/QRBarcodeGenerator'
 import TemplateLibrary from '@/components/editor/TemplateLibrary'
 import AlignmentTools from '@/components/editor/AlignmentTools'
 import AutoSaveManager from '@/components/editor/AutoSaveManager'
@@ -33,6 +34,7 @@ export default function EditorPage() {
   const [showImageUploader, setShowImageUploader] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showAlignmentTools, setShowAlignmentTools] = useState(false)
+  const [showQRBarcodeGenerator, setShowQRBarcodeGenerator] = useState(false)
   const [showRulers, setShowRulers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
 
@@ -163,6 +165,7 @@ export default function EditorPage() {
         onLoad={handleLoadProject}
         onOpenTemplates={() => setShowTemplateLibrary(true)}
         onOpenImageUploader={() => setShowImageUploader(true)}
+        onOpenQRBarcodeGenerator={() => setShowQRBarcodeGenerator(true)}
         onOpenCustomSize={() => setShowCustomSizeModal(true)}
         onToggleAlignment={handleToggleAlignmentTools}
         onToggleRulers={handleToggleRulers}
@@ -243,10 +246,16 @@ export default function EditorPage() {
         currentSize={{ width: canvasSettings.width, height: canvasSettings.height }}
       />
 
-      {/* Image Uploader */}
-      <ImageUploader
+      {/* Advanced Image Uploader */}
+      <AdvancedImageUploader
         isOpen={showImageUploader}
         onClose={() => setShowImageUploader(false)}
+      />
+
+      {/* QR & Barcode Generator */}
+      <QRBarcodeGenerator
+        isOpen={showQRBarcodeGenerator}
+        onClose={() => setShowQRBarcodeGenerator(false)}
       />
 
       {/* Template Library */}

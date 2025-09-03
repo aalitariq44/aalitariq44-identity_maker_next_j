@@ -33,6 +33,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
   const [isPanning, setIsPanning] = useState(false)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
+  const [lastWheelTime, setLastWheelTime] = useState(0)
 
   const {
     shapes,
@@ -46,6 +47,8 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     undo,
     redo,
     saveToHistory,
+    setZoom,
+    updateCanvasSettings,
   } = useEditorStore()
 
   const selectedShape = shapes.find(shape => shape.id === selectedShapeId)
@@ -57,6 +60,64 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
       setContext(ctx)
     }
   }, [])
+
+  // Enhanced zoom and pan handlers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault()
+    
+    const now = Date.now()
+    if (now - lastWheelTime < 16) return // Throttle to ~60fps
+    setLastWheelTime(now)
+
+    if (!canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    // Zoom factor
+    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1
+    const newZoom = Math.max(0.1, Math.min(5, canvasSettings.zoom * scaleFactor))
+
+    // Calculate zoom point for smooth zooming
+    const zoomPoint = {
+      x: (mouseX - canvasOffset.x) / canvasSettings.zoom,
+      y: (mouseY - canvasOffset.y) / canvasSettings.zoom
+    }
+
+    const newOffset = {
+      x: mouseX - zoomPoint.x * newZoom,
+      y: mouseY - zoomPoint.y * newZoom
+    }
+
+    setZoom(newZoom)
+    setCanvasOffset(newOffset)
+  }, [canvasSettings.zoom, canvasOffset, setZoom, lastWheelTime])
+
+  // Reset view function
+  const resetView = useCallback(() => {
+    setZoom(1)
+    setCanvasOffset({ x: 0, y: 0 })
+  }, [setZoom])
+
+  // Fit to screen function
+  const fitToScreen = useCallback(() => {
+    if (!canvasRef.current) return
+    
+    const containerRect = canvasRef.current.getBoundingClientRect()
+    const containerWidth = containerRect.width - 40 // padding
+    const containerHeight = containerRect.height - 40 // padding
+    
+    const scaleX = containerWidth / canvasSettings.width
+    const scaleY = containerHeight / canvasSettings.height
+    const newZoom = Math.min(scaleX, scaleY, 2) * 0.9 // Add some padding and limit max zoom
+    
+    const offsetX = (containerWidth - canvasSettings.width * newZoom) / 2
+    const offsetY = (containerHeight - canvasSettings.height * newZoom) / 2
+    
+    setZoom(newZoom)
+    setCanvasOffset({ x: offsetX, y: offsetY })
+  }, [canvasSettings.width, canvasSettings.height, setZoom])
 
   // Enhanced keyboard event handlers
   useEffect(() => {
@@ -84,6 +145,36 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
           ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Z')) {
         e.preventDefault()
         redo()
+        return
+      }
+
+      // Handle Ctrl+0 (Reset Zoom)
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault()
+        resetView()
+        return
+      }
+
+      // Handle Ctrl+9 (Fit to Screen)
+      if ((e.ctrlKey || e.metaKey) && e.key === '9') {
+        e.preventDefault()
+        fitToScreen()
+        return
+      }
+
+      // Handle Ctrl++ or Ctrl+= (Zoom In)
+      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
+        e.preventDefault()
+        const newZoom = Math.min(5, canvasSettings.zoom * 1.2)
+        setZoom(newZoom)
+        return
+      }
+
+      // Handle Ctrl+- (Zoom Out)
+      if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+        e.preventDefault()
+        const newZoom = Math.max(0.1, canvasSettings.zoom * 0.8)
+        setZoom(newZoom)
         return
       }
 
@@ -800,7 +891,251 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
           context.fillText(textShape.text, 0, 0)
           break
           
-        // ... other shape types remain the same
+        case 'image':
+          if ((shape as any).imageUrl || (shape as any).src) {
+            const imageShape = shape as any
+            const img = new Image()
+            img.onload = () => {
+              // Save current transform
+              context.save()
+              
+              // Apply shape transformations
+              context.translate(shape.position.x, shape.position.y)
+              context.rotate((shape.rotation * Math.PI) / 180)
+              context.globalAlpha = shape.opacity
+              
+              // Apply corner radius if specified
+              if (imageShape.cornerRadius > 0) {
+                context.beginPath()
+                context.roundRect(0, 0, shape.size.width, shape.size.height, imageShape.cornerRadius)
+                context.clip()
+              }
+              
+              // Draw the image
+              context.drawImage(img, 0, 0, shape.size.width, shape.size.height)
+              
+              // Draw border if specified
+              if (imageShape.borderWidth > 0) {
+                context.strokeStyle = imageShape.borderColor || '#000000'
+                context.lineWidth = imageShape.borderWidth
+                context.strokeRect(0, 0, shape.size.width, shape.size.height)
+              }
+              
+              context.restore()
+              
+              // Redraw to show the updated image
+              if (shapes.findIndex(s => s.id === shape.id) === shapes.length - 1) {
+                // This was the last shape, trigger a redraw
+                setTimeout(() => {
+                  const event = new CustomEvent('canvasRedraw')
+                  window.dispatchEvent(event)
+                }, 0)
+              }
+            }
+            img.src = imageShape.imageUrl || imageShape.src
+          } else {
+            // Draw placeholder for image
+            context.fillStyle = '#f3f4f6'
+            context.fillRect(0, 0, shape.size.width, shape.size.height)
+            context.strokeStyle = '#d1d5db'
+            context.lineWidth = 2
+            context.strokeRect(0, 0, shape.size.width, shape.size.height)
+            
+            // Draw placeholder icon
+            context.fillStyle = '#9ca3af'
+            context.font = '24px Arial'
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+            context.fillText('🖼️', shape.size.width / 2, shape.size.height / 2)
+          }
+          break
+          
+        case 'person':
+          const personShape = shape as any
+          if (personShape.src && !personShape.placeholder) {
+            const img = new Image()
+            img.onload = () => {
+              context.save()
+              context.translate(shape.position.x, shape.position.y)
+              context.rotate((shape.rotation * Math.PI) / 180)
+              context.globalAlpha = shape.opacity
+              
+              // Apply border radius for person photos
+              if (personShape.borderRadius > 0) {
+                context.beginPath()
+                context.roundRect(0, 0, shape.size.width, shape.size.height, personShape.borderRadius)
+                context.clip()
+              }
+              
+              context.drawImage(img, 0, 0, shape.size.width, shape.size.height)
+              
+              // Draw border
+              if (personShape.borderWidth > 0) {
+                context.strokeStyle = personShape.borderColor || '#d1d5db'
+                context.lineWidth = personShape.borderWidth
+                context.stroke()
+              }
+              
+              context.restore()
+            }
+            img.src = personShape.src
+          } else {
+            // Draw person placeholder
+            context.fillStyle = '#f3f4f6'
+            context.fillRect(0, 0, shape.size.width, shape.size.height)
+            context.strokeStyle = '#d1d5db'
+            context.lineWidth = 2
+            context.strokeRect(0, 0, shape.size.width, shape.size.height)
+            
+            // Draw person icon
+            const centerX = shape.size.width / 2
+            const centerY = shape.size.height / 2
+            const iconSize = Math.min(shape.size.width, shape.size.height) * 0.3
+            
+            context.fillStyle = '#9ca3af'
+            
+            // Head (circle)
+            context.beginPath()
+            context.arc(centerX, centerY - iconSize * 0.3, iconSize * 0.3, 0, 2 * Math.PI)
+            context.fill()
+            
+            // Body (rounded rectangle)
+            context.beginPath()
+            const bodyX = centerX - iconSize * 0.4
+            const bodyY = centerY + iconSize * 0.1
+            const bodyWidth = iconSize * 0.8
+            const bodyHeight = iconSize * 0.6
+            context.roundRect(bodyX, bodyY, bodyWidth, bodyHeight, iconSize * 0.1)
+            context.fill()
+            
+            // Text
+            context.fillStyle = '#6b7280'
+            context.font = `${Math.max(12, shape.size.width * 0.08)}px Arial`
+            context.textAlign = 'center'
+            context.textBaseline = 'bottom'
+            context.fillText('صورة شخصية', centerX, shape.size.height - 10)
+          }
+          break
+          
+        case 'qr':
+          const qrShape = shape as any
+          if (qrShape.src) {
+            const img = new Image()
+            img.onload = () => {
+              context.save()
+              context.translate(shape.position.x, shape.position.y)
+              context.rotate((shape.rotation * Math.PI) / 180)
+              context.globalAlpha = shape.opacity
+              
+              // Draw background
+              context.fillStyle = qrShape.backgroundColor || '#ffffff'
+              context.fillRect(0, 0, shape.size.width, shape.size.height)
+              
+              // Draw QR code
+              context.drawImage(img, 0, 0, shape.size.width, shape.size.height)
+              
+              context.restore()
+            }
+            img.src = qrShape.src
+          } else {
+            // Draw QR placeholder
+            context.fillStyle = qrShape.backgroundColor || '#ffffff'
+            context.fillRect(0, 0, shape.size.width, shape.size.height)
+            context.strokeStyle = '#d1d5db'
+            context.lineWidth = 2
+            context.strokeRect(0, 0, shape.size.width, shape.size.height)
+            
+            // Draw QR pattern placeholder
+            context.fillStyle = qrShape.foregroundColor || '#000000'
+            const cellSize = Math.min(shape.size.width, shape.size.height) / 21
+            
+            // Draw some QR-like pattern
+            for (let i = 0; i < 21; i++) {
+              for (let j = 0; j < 21; j++) {
+                if ((i + j) % 3 === 0 || (i === 0 || j === 0 || i === 20 || j === 20)) {
+                  context.fillRect(i * cellSize, j * cellSize, cellSize, cellSize)
+                }
+              }
+            }
+            
+            // Add "QR" text in center
+            context.fillStyle = qrShape.backgroundColor || '#ffffff'
+            context.font = `${cellSize * 3}px Arial Black`
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+            context.fillText('QR', shape.size.width / 2, shape.size.height / 2)
+          }
+          break
+          
+        case 'barcode':
+          const barcodeShape = shape as any
+          if (barcodeShape.src) {
+            const img = new Image()
+            img.onload = () => {
+              context.save()
+              context.translate(shape.position.x, shape.position.y)
+              context.rotate((shape.rotation * Math.PI) / 180)
+              context.globalAlpha = shape.opacity
+              
+              // Draw background
+              context.fillStyle = barcodeShape.backgroundColor || '#ffffff'
+              context.fillRect(0, 0, shape.size.width, shape.size.height)
+              
+              // Draw barcode
+              context.drawImage(img, 0, 0, shape.size.width, shape.size.height)
+              
+              context.restore()
+            }
+            img.src = barcodeShape.src
+          } else {
+            // Draw barcode placeholder
+            context.fillStyle = barcodeShape.backgroundColor || '#ffffff'
+            context.fillRect(0, 0, shape.size.width, shape.size.height)
+            context.strokeStyle = '#d1d5db'
+            context.lineWidth = 1
+            context.strokeRect(0, 0, shape.size.width, shape.size.height)
+            
+            // Draw barcode lines
+            context.fillStyle = barcodeShape.lineColor || '#000000'
+            const lineCount = 50
+            const lineWidth = shape.size.width / lineCount
+            
+            for (let i = 0; i < lineCount; i++) {
+              if (i % 3 === 0 || i % 7 === 0) { // Varied pattern
+                const x = i * lineWidth
+                const height = shape.size.height * 0.7
+                context.fillRect(x, 5, lineWidth * 0.8, height)
+              } else if (i % 2 === 0) {
+                const x = i * lineWidth
+                const height = shape.size.height * 0.5
+                context.fillRect(x, 5, lineWidth * 0.5, height)
+              }
+            }
+            
+            // Add sample text
+            context.fillStyle = barcodeShape.lineColor || '#000000'
+            context.font = '12px Arial'
+            context.textAlign = 'center'
+            context.textBaseline = 'bottom'
+            context.fillText(barcodeShape.data || '123456789012', shape.size.width / 2, shape.size.height - 5)
+          }
+          break
+
+        case 'triangle':
+          const triangleShape = shape as any
+          context.beginPath()
+          context.moveTo(shape.size.width / 2, 0)
+          context.lineTo(0, shape.size.height)
+          context.lineTo(shape.size.width, shape.size.height)
+          context.closePath()
+          context.fillStyle = triangleShape.fill
+          context.fill()
+          context.strokeStyle = triangleShape.stroke
+          context.lineWidth = triangleShape.strokeWidth / canvasSettings.zoom
+          if (triangleShape.strokeWidth > 0) {
+            context.stroke()
+          }
+          break
         
         default:
           // Default rectangle for unknown types
@@ -852,6 +1187,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         tabIndex={0}
       />
       
@@ -860,6 +1196,46 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
         Zoom: {Math.round(canvasSettings.zoom * 100)}% | 
         {multiSelection.length > 0 ? ` Selected: ${multiSelection.length}` : selectedShape ? ' Selected: 1' : ' No selection'} |
         {isSpacePressed ? ' Pan Mode' : ''}
+      </div>
+      
+      {/* Zoom Controls */}
+      <div className="absolute top-2 right-2 flex flex-col gap-1">
+        <button
+          onClick={() => setZoom(Math.min(5, canvasSettings.zoom * 1.2))}
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
+          title="تكبير (Ctrl + +)"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+        </button>
+        <button
+          onClick={() => setZoom(Math.max(0.1, canvasSettings.zoom * 0.8))}
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
+          title="تصغير (Ctrl + -)"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+          </svg>
+        </button>
+        <button
+          onClick={resetView}
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
+          title="إعادة تعيين العرض (Ctrl + 0)"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+        <button
+          onClick={fitToScreen}
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
+          title="ملائمة للشاشة (Ctrl + 9)"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
       </div>
     </div>
   )

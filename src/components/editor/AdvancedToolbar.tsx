@@ -50,6 +50,7 @@ interface AdvancedToolbarProps {
   onLoad?: () => void
   onOpenTemplates?: () => void
   onOpenImageUploader?: () => void
+  onOpenQRBarcodeGenerator?: () => void
   onOpenCustomSize?: () => void
   onToggleAlignment?: () => void
   onToggleRulers?: () => void
@@ -61,6 +62,7 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({
   onLoad,
   onOpenTemplates,
   onOpenImageUploader,
+  onOpenQRBarcodeGenerator,
   onOpenCustomSize,
   onToggleAlignment,
   onToggleRulers
@@ -466,6 +468,16 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({
           >
             <Image className="w-4 h-4" />
             <span className="hidden sm:inline">صورة</span>
+          </button>
+
+          {/* Add QR/Barcode */}
+          <button
+            onClick={onOpenQRBarcodeGenerator}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
+            title="إضافة QR أو باركود"
+          >
+            <QrCode className="w-4 h-4" />
+            <span className="hidden sm:inline">QR/كود</span>
           </button>
 
           <div className="w-px h-6 bg-gray-300 mx-2" />

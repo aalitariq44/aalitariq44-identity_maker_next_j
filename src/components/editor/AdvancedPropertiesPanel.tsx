@@ -276,6 +276,198 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
             </div>
           </div>
         )}
+
+        {selectedShape.type === 'image' && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">صورة</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">نصف قطر الزوايا</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={(selectedShape as any).cornerRadius || 0}
+                  onChange={(e) => handleShapeUpdate({ cornerRadius: Number(e.target.value) })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">السطوع</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={(selectedShape as any).filters?.brightness || 1}
+                  onChange={(e) => handleShapeUpdate({
+                    filters: {
+                      ...((selectedShape as any).filters || {}),
+                      brightness: Number(e.target.value)
+                    }
+                  })}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">التباين</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={(selectedShape as any).filters?.contrast || 1}
+                  onChange={(e) => handleShapeUpdate({
+                    filters: {
+                      ...((selectedShape as any).filters || {}),
+                      contrast: Number(e.target.value)
+                    }
+                  })}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">التشبع</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={(selectedShape as any).filters?.saturation || 1}
+                  onChange={(e) => handleShapeUpdate({
+                    filters: {
+                      ...((selectedShape as any).filters || {}),
+                      saturation: Number(e.target.value)
+                    }
+                  })}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'person' && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">صورة شخصية</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">نصف قطر الحدود</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={(selectedShape as any).borderRadius || 8}
+                  onChange={(e) => handleShapeUpdate({ borderRadius: Number(e.target.value) })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">سمك الحدود</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={(selectedShape as any).borderWidth || 2}
+                  onChange={(e) => handleShapeUpdate({ borderWidth: Number(e.target.value) })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الحدود</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).borderColor || '#6b7280'}
+                  onChange={(e) => handleShapeUpdate({ borderColor: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'qr' && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">رمز QR</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">البيانات</label>
+                <textarea
+                  value={(selectedShape as any).data || ''}
+                  onChange={(e) => handleShapeUpdate({ data: e.target.value })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 resize-none"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الأمام</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).foregroundColor || '#000000'}
+                  onChange={(e) => handleShapeUpdate({ foregroundColor: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الخلفية</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).backgroundColor || '#ffffff'}
+                  onChange={(e) => handleShapeUpdate({ backgroundColor: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'barcode' && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">باركود</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">البيانات</label>
+                <input
+                  type="text"
+                  value={(selectedShape as any).data || ''}
+                  onChange={(e) => handleShapeUpdate({ data: e.target.value })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">نوع الباركود</label>
+                <select
+                  value={(selectedShape as any).format || '128'}
+                  onChange={(e) => handleShapeUpdate({ format: e.target.value })}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="128">Code 128</option>
+                  <option value="CODE39">Code 39</option>
+                  <option value="EAN13">EAN-13</option>
+                  <option value="UPC">UPC</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الخطوط</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).lineColor || '#000000'}
+                  onChange={(e) => handleShapeUpdate({ lineColor: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الخلفية</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).backgroundColor || '#ffffff'}
+                  onChange={(e) => handleShapeUpdate({ backgroundColor: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
