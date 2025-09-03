@@ -110,6 +110,7 @@ export interface CanvasSettings {
   snapToGrid: boolean
   zoom: number
   gridColor: string
+  gridType: 'lines' | 'dots' | 'crosses' | 'diagonal'
 }
 
 export interface EditorState {

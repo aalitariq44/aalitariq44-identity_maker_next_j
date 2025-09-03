@@ -60,6 +60,7 @@ const initialCanvasSettings: CanvasSettings = {
   snapToGrid: false,
   zoom: 1,
   gridColor: '#e5e7eb',
+  gridType: 'lines',
 }
 
 export const useEditorStore = create<EditorStore>()(

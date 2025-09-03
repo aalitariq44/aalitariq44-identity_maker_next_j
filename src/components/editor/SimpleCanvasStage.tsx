@@ -532,24 +532,85 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
     // Draw grid if enabled
     if (canvasSettings.showGrid) {
       context.strokeStyle = canvasSettings.gridColor
-      context.lineWidth = 1
+      context.lineWidth = 0.5
       context.setLineDash([])
-      
-      // Vertical lines
-      for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
-        context.beginPath()
-        context.moveTo(x, 0)
-        context.lineTo(x, canvasSettings.height)
-        context.stroke()
+      context.globalAlpha = 0.5
+
+      switch (canvasSettings.gridType) {
+        case 'lines':
+          // Vertical lines
+          for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
+            context.beginPath()
+            context.moveTo(x, 0)
+            context.lineTo(x, canvasSettings.height)
+            context.stroke()
+          }
+
+          // Horizontal lines
+          for (let y = 0; y <= canvasSettings.height; y += canvasSettings.gridSize) {
+            context.beginPath()
+            context.moveTo(0, y)
+            context.lineTo(canvasSettings.width, y)
+            context.stroke()
+          }
+          break
+
+        case 'dots':
+          context.fillStyle = canvasSettings.gridColor
+          // Dots at grid intersections
+          for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
+            for (let y = 0; y <= canvasSettings.height; y += canvasSettings.gridSize) {
+              context.beginPath()
+              context.arc(x, y, 1, 0, 2 * Math.PI)
+              context.fill()
+            }
+          }
+          break
+
+        case 'crosses':
+          // Crosses at grid intersections
+          for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
+            for (let y = 0; y <= canvasSettings.height; y += canvasSettings.gridSize) {
+              // Horizontal line of cross
+              context.beginPath()
+              context.moveTo(x - 3, y)
+              context.lineTo(x + 3, y)
+              context.stroke()
+              // Vertical line of cross
+              context.beginPath()
+              context.moveTo(x, y - 3)
+              context.lineTo(x, y + 3)
+              context.stroke()
+            }
+          }
+          break
+
+        case 'diagonal':
+          context.globalAlpha = 0.3
+          const diagonalSpacing = canvasSettings.gridSize * 2
+
+          // Top-left to bottom-right diagonals
+          for (let i = -canvasSettings.height; i <= canvasSettings.width; i += diagonalSpacing) {
+            context.beginPath()
+            context.moveTo(i, 0)
+            context.lineTo(i + canvasSettings.height, canvasSettings.height)
+            context.stroke()
+          }
+
+          // Top-right to bottom-left diagonals
+          for (let i = 0; i <= canvasSettings.width + canvasSettings.height; i += diagonalSpacing) {
+            context.beginPath()
+            context.moveTo(i, 0)
+            context.lineTo(i - canvasSettings.height, canvasSettings.height)
+            context.stroke()
+          }
+          break
+
+        default:
+          break
       }
-      
-      // Horizontal lines
-      for (let y = 0; y <= canvasSettings.height; y += canvasSettings.gridSize) {
-        context.beginPath()
-        context.moveTo(0, y)
-        context.lineTo(canvasSettings.width, y)
-        context.stroke()
-      }
+
+      context.globalAlpha = 1 // Reset alpha
     }
     
     console.log('Drawing background:', canvasSettings.backgroundColor)

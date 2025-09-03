@@ -161,33 +161,20 @@ export const PropertiesPanel: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                لون الشبكة
+                نوع الشبكة
               </label>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                  style={{ backgroundColor: canvasSettings.gridColor }}
-                  onClick={() => setShowColorPicker('grid-color')}
-                />
-                <input
-                  type="text"
-                  value={canvasSettings.gridColor}
-                  onChange={(e) => updateCanvasSettings({ gridColor: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              {showColorPicker === 'grid-color' && (
-                <div className="absolute z-10 mt-2">
-                  <div
-                    className="fixed inset-0"
-                    onClick={() => setShowColorPicker(null)}
-                  />
-                  <SketchPicker
-                    color={canvasSettings.gridColor}
-                    onChange={(color) => updateCanvasSettings({ gridColor: color.hex })}
-                  />
-                </div>
-              )}
+              <select
+                value={canvasSettings.gridType}
+                onChange={(e) => updateCanvasSettings({ 
+                  gridType: e.target.value as 'lines' | 'dots' | 'crosses' | 'diagonal' 
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="lines">خطوط</option>
+                <option value="dots">نقاط</option>
+                <option value="crosses">صلبان</option>
+                <option value="diagonal">خطوط مائلة</option>
+              </select>
             </div>
 
             <div>
