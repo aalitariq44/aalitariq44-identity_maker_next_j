@@ -170,6 +170,17 @@ export default function EditorPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Properties */}
+        <div className="w-80 bg-white border-r border-gray-200 shadow-sm">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              خصائص العنصر
+            </h3>
+          </div>
+          <AdvancedPropertiesPanel className="h-full" />
+        </div>
+
         {/* Left Sidebar - Alignment Tools */}
         {showAlignmentTools && (
           <div className="w-64 bg-white border-r border-gray-200 shadow-sm overflow-y-auto">
@@ -193,29 +204,15 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Right Panel - Properties and Layers */}
-        <div className="flex">
-          {/* Advanced Properties Panel */}
-          <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                خصائص العنصر
-              </h3>
-            </div>
-            <AdvancedPropertiesPanel className="h-full" />
+        {/* Right Panel - Layers */}
+        <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Layers className="w-5 h-5" />
+              الطبقات
+            </h3>
           </div>
-          
-          {/* Advanced Layers Panel */}
-          <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Layers className="w-5 h-5" />
-                الطبقات
-              </h3>
-            </div>
-            <AdvancedLayersPanel className="h-full" />
-          </div>
+          <AdvancedLayersPanel className="h-full" />
         </div>
       </div>
 
