@@ -90,6 +90,65 @@ export const PropertiesPanel: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                صورة الخلفية
+              </label>
+              <input
+                type="text"
+                placeholder="رابط الصورة"
+                value={canvasSettings.backgroundImage || ''}
+                onChange={(e) => updateCanvasSettings({ backgroundImage: e.target.value || undefined })}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {canvasSettings.backgroundImage && (
+                <button
+                  onClick={() => updateCanvasSettings({ backgroundImage: undefined })}
+                  className="mt-2 px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                >
+                  حذف الصورة
+                </button>
+              )}
+            </div>
+
+            {canvasSettings.backgroundImage && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  حجم صورة الخلفية
+                </label>
+                <select
+                  value={canvasSettings.backgroundSize}
+                  onChange={(e) => updateCanvasSettings({ 
+                    backgroundSize: e.target.value as 'cover' | 'contain' | 'stretch' | 'tile' 
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="cover">تغطية (Cover)</option>
+                  <option value="contain">احتواء (Contain)</option>
+                  <option value="stretch">تمديد (Stretch)</option>
+                  <option value="tile">تكرار (Tile)</option>
+                </select>
+              </div>
+            )}
+
+            {canvasSettings.backgroundImage && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  شفافية الخلفية
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={canvasSettings.backgroundOpacity}
+                  onChange={(e) => updateCanvasSettings({ backgroundOpacity: parseFloat(e.target.value) })}
+                  className="w-full"
+                />
+                <span className="text-xs text-gray-500">{Math.round(canvasSettings.backgroundOpacity * 100)}%</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 حجم الشبكة
               </label>
               <input
@@ -98,6 +157,64 @@ export const PropertiesPanel: React.FC = () => {
                 onChange={(e) => updateCanvasSettings({ gridSize: parseInt(e.target.value) || 20 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                لون الشبكة
+              </label>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                  style={{ backgroundColor: canvasSettings.gridColor }}
+                  onClick={() => setShowColorPicker('grid-color')}
+                />
+                <input
+                  type="text"
+                  value={canvasSettings.gridColor}
+                  onChange={(e) => updateCanvasSettings({ gridColor: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {showColorPicker === 'grid-color' && (
+                <div className="absolute z-10 mt-2">
+                  <div
+                    className="fixed inset-0"
+                    onClick={() => setShowColorPicker(null)}
+                  />
+                  <SketchPicker
+                    color={canvasSettings.gridColor}
+                    onChange={(color) => updateCanvasSettings({ gridColor: color.hex })}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                نمط الخلفية
+              </label>
+              <select
+                value={canvasSettings.backgroundPattern || ''}
+                onChange={(e) => updateCanvasSettings({ 
+                  backgroundPattern: e.target.value || undefined 
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">بدون نمط</option>
+                <option value="dots">نقاط</option>
+                <option value="lines">خطوط مائلة</option>
+                <option value="grid">شبكة</option>
+                <option value="stripes">خطوط عمودية</option>
+              </select>
+              {canvasSettings.backgroundPattern && (
+                <button
+                  onClick={() => updateCanvasSettings({ backgroundPattern: undefined })}
+                  className="mt-2 px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                >
+                  حذف النمط
+                </button>
+              )}
             </div>
           </div>
         </div>

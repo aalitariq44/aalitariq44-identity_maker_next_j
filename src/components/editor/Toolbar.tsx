@@ -45,28 +45,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
     redo,
     canvasSettings,
     updateCanvasSettings,
+    setBackgroundImage,
+    removeBackgroundImage,
     clearCanvas,
     history,
   } = useEditorStore()
 
   const handleAddRect = () => {
+    console.log('Adding rectangle...')
     const rect = createDefaultRect(50, 50)
+    console.log('Rectangle created:', rect)
     addShape(rect)
+    console.log('Rectangle added to store')
   }
 
   const handleAddCircle = () => {
-    const circle = createDefaultCircle(50, 50)
+    console.log('Adding circle...')
+    const circle = createDefaultCircle(100, 100)
+    console.log('Circle created:', circle)
     addShape(circle)
+    console.log('Circle added to store')
   }
 
   const handleAddText = () => {
-    const text = createDefaultText(50, 50)
+    console.log('Adding text...')
+    const text = createDefaultText(150, 150)
+    console.log('Text created:', text)
     addShape(text)
+    console.log('Text added to store')
   }
 
   const handleAddTriangle = () => {
-    const triangle = createDefaultTriangle(50, 50)
+    console.log('Adding triangle...')
+    const triangle = createDefaultTriangle(200, 200)
+    console.log('Triangle created:', triangle)
     addShape(triangle)
+    console.log('Triangle added to store')
   }
 
   const handleDeleteSelected = () => {
@@ -93,6 +107,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
 
   const handleToggleSnapToGrid = () => {
     updateCanvasSettings({ snapToGrid: !canvasSettings.snapToGrid })
+  }
+
+  const handleBackgroundImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string
+        setBackgroundImage(imageUrl)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const canUndo = history.past.length > 0
@@ -148,6 +174,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
             >
               <Image className="w-5 h-5 text-gray-400" />
             </button>
+
+            <label className="p-2 rounded hover:bg-gray-100 transition-colors cursor-pointer" title="إضافة صورة خلفية">
+              <Image className="w-5 h-5" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleBackgroundImageUpload}
+                className="hidden"
+              />
+            </label>
           </div>
 
           {/* Edit Tools */}

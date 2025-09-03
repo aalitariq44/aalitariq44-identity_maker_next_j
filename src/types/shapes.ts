@@ -76,6 +76,10 @@ export interface CanvasSettings {
   height: number
   orientation: 'portrait' | 'landscape'
   backgroundColor: string
+  backgroundImage?: string
+  backgroundSize: 'cover' | 'contain' | 'stretch' | 'tile'
+  backgroundPattern?: string
+  backgroundOpacity: number
   gridSize: number
   showGrid: boolean
   snapToGrid: boolean

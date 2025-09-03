@@ -15,7 +15,7 @@ import {
 import { ArrowLeft, Settings, Download, Save, FolderOpen } from 'lucide-react'
 import Link from 'next/link'
 
-const CanvasStage = dynamic(() => import('@/components/editor/ClientSideCanvasStage'), { ssr: false })
+const CanvasStage = dynamic(() => import('@/components/editor/SimpleCanvasStage'), { ssr: false })
 const Toolbar = dynamic(() => import('@/components/editor/Toolbar'), { ssr: false })
 
 export default function EditorPage() {

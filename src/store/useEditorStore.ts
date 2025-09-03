@@ -20,6 +20,10 @@ interface EditorStore extends EditorState {
   updateCanvasSettings: (settings: Partial<CanvasSettings>) => void
   setCanvasSize: (width: number, height: number) => void
   toggleOrientation: () => void
+  setBackgroundImage: (imageUrl: string) => void
+  removeBackgroundImage: () => void
+  setBackgroundPattern: (pattern: string) => void
+  removeBackgroundPattern: () => void
   
   // History actions
   undo: () => void
@@ -47,6 +51,10 @@ const initialCanvasSettings: CanvasSettings = {
   height: 540,
   orientation: 'landscape',
   backgroundColor: '#ffffff',
+  backgroundImage: undefined,
+  backgroundSize: 'cover',
+  backgroundPattern: undefined,
+  backgroundOpacity: 1,
   gridSize: 20,
   showGrid: true,
   snapToGrid: false,
@@ -69,15 +77,24 @@ export const useEditorStore = create<EditorStore>()(
 
       addShape: (shapeData: Omit<Shape, 'id'>) => {
         set((state) => {
+          console.log('Store: Adding shape', shapeData)
+          // Get the highest z-index and add 1
+          const maxZIndex = state.shapes.length > 0 
+            ? Math.max(...state.shapes.map((s) => s.zIndex))
+            : 0
+          
           const newShape = {
             ...shapeData,
             id: nanoid(),
+            zIndex: maxZIndex + 1,
           } as Shape
           
+          console.log('Store: New shape created', newShape)
           state.shapes.push(newShape)
           state.selectedShapeId = newShape.id
           state.history.past.push([...state.shapes.slice(0, -1)])
           state.history.future = []
+          console.log('Store: Shapes count now:', state.shapes.length)
         })
       },
 
@@ -147,7 +164,9 @@ export const useEditorStore = create<EditorStore>()(
 
       updateCanvasSettings: (settings: Partial<CanvasSettings>) => {
         set((state) => {
+          console.log('Store: Updating canvas settings', settings)
           Object.assign(state.canvasSettings, settings)
+          console.log('Store: New canvas settings', state.canvasSettings)
         })
       },
 
@@ -167,6 +186,30 @@ export const useEditorStore = create<EditorStore>()(
             state.canvasSettings.orientation === 'portrait'
               ? 'landscape'
               : 'portrait'
+        })
+      },
+
+      setBackgroundImage: (imageUrl: string) => {
+        set((state) => {
+          state.canvasSettings.backgroundImage = imageUrl
+        })
+      },
+
+      removeBackgroundImage: () => {
+        set((state) => {
+          state.canvasSettings.backgroundImage = undefined
+        })
+      },
+
+      setBackgroundPattern: (pattern: string) => {
+        set((state) => {
+          state.canvasSettings.backgroundPattern = pattern
+        })
+      },
+
+      removeBackgroundPattern: () => {
+        set((state) => {
+          state.canvasSettings.backgroundPattern = undefined
         })
       },
 

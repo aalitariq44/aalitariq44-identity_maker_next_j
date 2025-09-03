@@ -10,6 +10,7 @@ let Circle: ComponentType<any> | null = null
 let Text: ComponentType<any> | null = null
 let Line: ComponentType<any> | null = null
 let Transformer: ComponentType<any> | null = null
+let Image: ComponentType<any> | null = null
 let Konva: any = null
 
 // Create a promise to track when Konva is loaded
@@ -27,6 +28,7 @@ const loadKonva = (): Promise<void> => {
         import('konva')
       ])
         .then(([reactKonva, konvaModule]) => {
+          console.log('Loading Konva components...')
           Stage = reactKonva.Stage
           Layer = reactKonva.Layer
           Rect = reactKonva.Rect
@@ -34,22 +36,14 @@ const loadKonva = (): Promise<void> => {
           Text = reactKonva.Text
           Line = reactKonva.Line
           Transformer = reactKonva.Transformer
+          Image = reactKonva.Image
           Konva = konvaModule.default || konvaModule
+          console.log('Konva components loaded successfully')
           resolve()
         })
         .catch((error) => {
           console.error('Failed to load Konva:', error)
-          // Fallback components
-          const Fallback = () => null
-          Stage = Fallback
-          Layer = Fallback
-          Rect = Fallback
-          Circle = Fallback
-          Text = Fallback
-          Line = Fallback
-          Transformer = Fallback
-          Konva = {}
-          resolve()
+          reject(error)
         })
     } else {
       // Server-side fallbacks
@@ -61,6 +55,7 @@ const loadKonva = (): Promise<void> => {
       Text = Fallback
       Line = Fallback
       Transformer = Fallback
+      Image = Fallback
       Konva = {}
       resolve()
     }
@@ -72,4 +67,4 @@ const loadKonva = (): Promise<void> => {
 // Initialize Konva loading
 loadKonva()
 
-export { Stage, Layer, Rect, Circle, Text, Line, Transformer, Konva, loadKonva }
+export { Stage, Layer, Rect, Circle, Text, Line, Transformer, Image, Konva, loadKonva }

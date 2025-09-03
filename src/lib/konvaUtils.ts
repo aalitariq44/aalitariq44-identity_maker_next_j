@@ -8,7 +8,7 @@ export const createDefaultRect = (x: number = 100, y: number = 100): Omit<RectSh
   opacity: 1,
   visible: true,
   locked: false,
-  zIndex: 0,
+  zIndex: 1,
   fill: '#3b82f6',
   stroke: '#1e40af',
   strokeWidth: 2,
@@ -23,7 +23,7 @@ export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<Circ
   opacity: 1,
   visible: true,
   locked: false,
-  zIndex: 0,
+  zIndex: 1,
   fill: '#ef4444',
   stroke: '#dc2626',
   strokeWidth: 2,
@@ -38,7 +38,7 @@ export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextSh
   opacity: 1,
   visible: true,
   locked: false,
-  zIndex: 0,
+  zIndex: 1,
   text: 'نص جديد',
   fontSize: 16,
   fontFamily: 'Arial',
@@ -61,7 +61,7 @@ export const createDefaultTriangle = (x: number = 100, y: number = 100): Omit<Tr
   opacity: 1,
   visible: true,
   locked: false,
-  zIndex: 0,
+  zIndex: 1,
   fill: '#10b981',
   stroke: '#059669',
   strokeWidth: 2,
@@ -130,4 +130,67 @@ export const calculateCanvasScale = (
   const offsetY = (containerHeight - scaledHeight) / 2
 
   return { scale, offsetX, offsetY }
+}
+
+// Create pattern backgrounds
+export const createPattern = (patternType: string, color1: string = '#ffffff', color2: string = '#e5e7eb') => {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+
+  switch (patternType) {
+    case 'dots': {
+      canvas.width = 20
+      canvas.height = 20
+      ctx.fillStyle = color1
+      ctx.fillRect(0, 0, 20, 20)
+      ctx.fillStyle = color2
+      ctx.beginPath()
+      ctx.arc(10, 10, 3, 0, Math.PI * 2)
+      ctx.fill()
+      break
+    }
+    case 'lines': {
+      canvas.width = 20
+      canvas.height = 20
+      ctx.fillStyle = color1
+      ctx.fillRect(0, 0, 20, 20)
+      ctx.strokeStyle = color2
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(20, 20)
+      ctx.stroke()
+      break
+    }
+    case 'grid': {
+      canvas.width = 20
+      canvas.height = 20
+      ctx.fillStyle = color1
+      ctx.fillRect(0, 0, 20, 20)
+      ctx.strokeStyle = color2
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(20, 0)
+      ctx.lineTo(20, 20)
+      ctx.lineTo(0, 20)
+      ctx.closePath()
+      ctx.stroke()
+      break
+    }
+    case 'stripes': {
+      canvas.width = 20
+      canvas.height = 20
+      ctx.fillStyle = color1
+      ctx.fillRect(0, 0, 20, 20)
+      ctx.fillStyle = color2
+      ctx.fillRect(0, 0, 10, 20)
+      break
+    }
+    default:
+      return null
+  }
+
+  return canvas
 }
