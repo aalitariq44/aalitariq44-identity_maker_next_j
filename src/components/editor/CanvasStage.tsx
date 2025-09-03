@@ -15,6 +15,7 @@ interface CanvasStageProps {
 export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { isLoaded: isKonvaLoaded } = useKonva()
   const [backgroundImageObj, setBackgroundImageObj] = useState<HTMLImageElement | null>(null)
@@ -39,32 +40,41 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   }, [isKonvaLoaded])
 
   // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Delete selected shape with Delete key only
-      if (e.key === 'Delete' && selectedShapeId) {
-        e.preventDefault()
-        const selectedShape = shapes.find(s => s.id === selectedShapeId)
-        if (selectedShape && !selectedShape.locked) {
-          const { deleteShape } = useEditorStore.getState()
-          deleteShape(selectedShapeId)
-        }
-      }
-      
-      // Escape key to deselect
-      if (e.key === 'Escape') {
-        setSelectedId(null)
-        selectShape(null)
+  const handleKeyDown = useCallback((e: any) => {
+    console.log('Key pressed:', e.key, 'Ctrl:', e.ctrlKey, 'Selected:', selectedShapeId)
+    
+    // Delete selected shape with Delete key only
+    if (e.key === 'Delete' && selectedShapeId) {
+      e.preventDefault()
+      const selectedShape = shapes.find(s => s.id === selectedShapeId)
+      if (selectedShape && !selectedShape.locked) {
+        const { deleteShape } = useEditorStore.getState()
+        deleteShape(selectedShapeId)
       }
     }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+    
+    // Copy selected shape with Ctrl+C
+    if (e.ctrlKey && e.key === 'c' && selectedShapeId) {
+      e.preventDefault()
+      console.log('Copying shape:', selectedShapeId)
+      const { copyShape } = useEditorStore.getState()
+      copyShape(selectedShapeId)
     }
-  }, [selectedShapeId, shapes, selectShape])
-
-  // Debug canvas settings changes
+    
+    // Paste shape with Ctrl+V
+    if (e.ctrlKey && e.key === 'v') {
+      e.preventDefault()
+      console.log('Pasting shape')
+      const { pasteShape } = useEditorStore.getState()
+      pasteShape()
+    }
+    
+    // Escape key to deselect
+    if (e.key === 'Escape') {
+      setSelectedId(null)
+      selectShape(null)
+    }
+  }, [selectedShapeId, shapes, selectShape])  // Debug canvas settings changes
   useEffect(() => {
     console.log('Canvas settings changed:', canvasSettings)
   }, [canvasSettings])
@@ -412,8 +422,15 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
 
   return (
     <div 
+      ref={containerRef}
       className="canvas-container border border-gray-300 bg-gray-100 shadow-lg overflow-hidden"
       style={{ width, height }}
+      tabIndex={0}
+      onClick={() => {
+        // Focus the div to enable keyboard events
+        if (containerRef.current) containerRef.current.focus()
+      }}
+      onKeyDown={handleKeyDown}
     >
       {React.createElement(Stage, {
         ref: stageRef,

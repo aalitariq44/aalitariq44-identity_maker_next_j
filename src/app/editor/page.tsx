@@ -5,13 +5,18 @@ import dynamic from 'next/dynamic'
 import { useEditorStore } from '@/store/useEditorStore'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
+import CustomSizeModal from '@/components/editor/CustomSizeModal'
+import ImageUploader from '@/components/editor/ImageUploader'
+import TemplateLibrary from '@/components/editor/TemplateLibrary'
+import AlignmentTools from '@/components/editor/AlignmentTools'
+import AutoSaveManager from '@/components/editor/AutoSaveManager'
 import { 
   exportCanvasAsImage, 
   exportCanvasAsPDF, 
   saveProjectAsJSON, 
   loadProjectFromJSON 
 } from '@/lib/exportUtils'
-import { ArrowLeft, Settings, Download, Save, FolderOpen, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Save, FolderOpen, RotateCcw, Layers, Grid, BookTemplate, Palette } from 'lucide-react'
 import Link from 'next/link'
 
 // Dynamic imports for client-side components
@@ -24,6 +29,11 @@ export default function EditorPage() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showCustomSizeModal, setShowCustomSizeModal] = useState(false)
+  const [showImageUploader, setShowImageUploader] = useState(false)
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
+  const [showAlignmentTools, setShowAlignmentTools] = useState(false)
+  const [showRulers, setShowRulers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
 
   const {
@@ -32,6 +42,7 @@ export default function EditorPage() {
     toggleOrientation,
     saveProject,
     loadProject,
+    updateCanvasSettings,
   } = useEditorStore()
 
   const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
@@ -88,6 +99,23 @@ export default function EditorPage() {
     setShowSettingsModal(false)
   }
 
+  const handleCustomSizeApply = (size: { width: number; height: number; name?: string }) => {
+    setCanvasSize(size.width, size.height)
+    setShowCustomSizeModal(false)
+  }
+
+  const handleToggleOrientation = () => {
+    toggleOrientation()
+  }
+
+  const handleToggleAlignmentTools = () => {
+    setShowAlignmentTools(!showAlignmentTools)
+  }
+
+  const handleToggleRulers = () => {
+    setShowRulers(!showRulers)
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -103,16 +131,21 @@ export default function EditorPage() {
           
           <div className="w-px h-6 bg-gray-300" />
           
-          <h1 className="text-xl font-bold text-gray-800">محرر الهويات</h1>
+          <h1 className="text-xl font-bold text-gray-800">محرر الهويات المتقدم</h1>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Auto Save Manager */}
+          <AutoSaveManager />
+
+          <div className="w-px h-6 bg-gray-300" />
+
           <div className="flex items-center gap-2 mr-4">
             <span className="text-sm text-gray-600">
               الاتجاه: {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
             </span>
             <button
-              onClick={toggleOrientation}
+              onClick={handleToggleOrientation}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
               title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
             >
@@ -120,38 +153,6 @@ export default function EditorPage() {
               {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
             </button>
           </div>
-
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-            إعدادات القماش
-          </button>
-
-          <button
-            onClick={handleLoadProject}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
-          >
-            <FolderOpen className="w-4 h-4" />
-            فتح مشروع
-          </button>
-
-          <button
-            onClick={handleSaveProject}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            حفظ المشروع
-          </button>
-
-          <button
-            onClick={() => setShowExportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            تصدير
-          </button>
         </div>
       </header>
 
@@ -160,12 +161,30 @@ export default function EditorPage() {
         onExport={() => setShowExportModal(true)}
         onSave={handleSaveProject}
         onLoad={handleLoadProject}
+        onOpenTemplates={() => setShowTemplateLibrary(true)}
+        onOpenImageUploader={() => setShowImageUploader(true)}
+        onOpenCustomSize={() => setShowCustomSizeModal(true)}
+        onToggleAlignment={handleToggleAlignmentTools}
+        onToggleRulers={handleToggleRulers}
       />
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Alignment Tools */}
+        {showAlignmentTools && (
+          <div className="w-64 bg-white border-r border-gray-200 shadow-sm overflow-y-auto">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Palette className="w-5 h-5" />
+                أدوات المحاذاة
+              </h3>
+            </div>
+            <AlignmentTools />
+          </div>
+        )}
+
         {/* Canvas Area */}
-        <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
+        <div className="flex-1 flex items-center justify-center p-8 overflow-auto bg-gray-100">
           <div ref={canvasRef} className="flex items-center justify-center">
             <AdvancedCanvasStage
               width={Math.min(canvasSettings.width, 800)}
@@ -177,13 +196,31 @@ export default function EditorPage() {
         {/* Right Panel - Properties and Layers */}
         <div className="flex">
           {/* Advanced Properties Panel */}
-          <AdvancedPropertiesPanel className="w-80" />
+          <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                خصائص العنصر
+              </h3>
+            </div>
+            <AdvancedPropertiesPanel className="h-full" />
+          </div>
           
           {/* Advanced Layers Panel */}
-          <AdvancedLayersPanel className="w-80" />
+          <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Layers className="w-5 h-5" />
+                الطبقات
+              </h3>
+            </div>
+            <AdvancedLayersPanel className="h-full" />
+          </div>
         </div>
       </div>
 
+      {/* Modals */}
+      
       {/* Export Modal */}
       <ExportModal
         isOpen={showExportModal}
@@ -200,6 +237,43 @@ export default function EditorPage() {
           onClose={() => setShowSettingsModal(false)}
         />
       )}
+
+      {/* Custom Size Modal */}
+      <CustomSizeModal
+        isOpen={showCustomSizeModal}
+        onClose={() => setShowCustomSizeModal(false)}
+        onApply={handleCustomSizeApply}
+        currentSize={{ width: canvasSettings.width, height: canvasSettings.height }}
+      />
+
+      {/* Image Uploader */}
+      <ImageUploader
+        isOpen={showImageUploader}
+        onClose={() => setShowImageUploader(false)}
+      />
+
+      {/* Template Library */}
+      <TemplateLibrary
+        isOpen={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+      />
+
+      {/* Status Bar */}
+      <div className="bg-white border-t border-gray-200 px-6 py-2">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center gap-4">
+            <span>الحجم: {canvasSettings.width}×{canvasSettings.height} بكسل</span>
+            <span>التكبير: {Math.round(canvasSettings.zoom * 100)}%</span>
+            <span className={`flex items-center gap-1 ${canvasSettings.showGrid ? 'text-blue-600' : ''}`}>
+              <Grid className="w-4 h-4" />
+              {canvasSettings.showGrid ? 'الشبكة مُفعلة' : 'الشبكة مُعطلة'}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>جاهز للتصميم</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

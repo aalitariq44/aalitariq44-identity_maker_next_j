@@ -364,6 +364,7 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
+            console.log('Copied shape:', shape)
             state.clipboard = [shape]
           }
         })
@@ -373,18 +374,22 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           if (state.clipboard.length > 0) {
             const shapeToPaste = state.clipboard[0]
+            console.log('Pasting shape:', shapeToPaste)
             const newShape = {
               ...shapeToPaste,
               id: nanoid(),
               position: {
-                x: shapeToPaste.position.x + 20,
-                y: shapeToPaste.position.y + 20,
+                x: shapeToPaste.position.x,
+                y: shapeToPaste.position.y,
               },
             }
             state.shapes.push(newShape)
             state.selectedShapeId = newShape.id
             state.history.past.push([...state.shapes.slice(0, -1)])
             state.history.future = []
+            console.log('Pasted new shape:', newShape)
+          } else {
+            console.log('No shape in clipboard to paste')
           }
         })
       },

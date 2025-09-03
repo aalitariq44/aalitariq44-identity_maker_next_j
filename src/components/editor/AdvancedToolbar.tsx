@@ -31,7 +31,16 @@ import {
   Layers,
   MousePointer2,
   Hand,
-  Plus
+  Plus,
+  Ruler,
+  Shapes,
+  Paintbrush,
+  Move,
+  Scissors,
+  Clipboard,
+  AlignCenter,
+  BookTemplate,
+  Maximize2
 } from 'lucide-react'
 import { createDefaultRect, createDefaultCircle, createDefaultTriangle, createDefaultText, createDefaultPerson, createDefaultQR, createDefaultBarcode } from '@/lib/konvaUtils'
 
@@ -39,12 +48,27 @@ interface AdvancedToolbarProps {
   onExport?: () => void
   onSave?: () => void
   onLoad?: () => void
+  onOpenTemplates?: () => void
+  onOpenImageUploader?: () => void
+  onOpenCustomSize?: () => void
+  onToggleAlignment?: () => void
+  onToggleRulers?: () => void
 }
 
-const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onLoad }) => {
+const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ 
+  onExport, 
+  onSave, 
+  onLoad,
+  onOpenTemplates,
+  onOpenImageUploader,
+  onOpenCustomSize,
+  onToggleAlignment,
+  onToggleRulers
+}) => {
   const [selectedTool, setSelectedTool] = useState<string>('select')
   const [showShapesPanel, setShowShapesPanel] = useState(false)
   const [showToolsPanel, setShowToolsPanel] = useState(false)
+  const [showAdvancedPanel, setShowAdvancedPanel] = useState(false)
 
   const {
     shapes,
@@ -60,7 +84,10 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
     updateCanvasSettings,
     selectShape,
     history,
-    clipboard
+    clipboard,
+    setZoom,
+    resetView,
+    fitToScreen
   } = useEditorStore()
 
   const selectedShape = shapes.find(shape => shape.id === selectedShapeId)
@@ -126,21 +153,51 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
 
   const handleZoomIn = () => {
     const newZoom = Math.min(canvasSettings.zoom * 1.2, 5)
-    updateCanvasSettings({ zoom: newZoom })
+    setZoom(newZoom)
   }
 
   const handleZoomOut = () => {
     const newZoom = Math.max(canvasSettings.zoom / 1.2, 0.1)
-    updateCanvasSettings({ zoom: newZoom })
+    setZoom(newZoom)
+  }
+
+  const handleResetZoom = () => {
+    setZoom(1)
+  }
+
+  const handleFitToScreen = () => {
+    fitToScreen()
   }
 
   const handleToggleGrid = () => {
     updateCanvasSettings({ showGrid: !canvasSettings.showGrid })
   }
 
+  const handleToggleSnap = () => {
+    updateCanvasSettings({ snapToGrid: !canvasSettings.snapToGrid })
+  }
+
   const handleCopy = () => {
     if (selectedShapeId) {
       copyShape(selectedShapeId)
+    }
+  }
+
+  const handleCut = () => {
+    if (selectedShapeId) {
+      copyShape(selectedShapeId)
+      deleteShape(selectedShapeId)
+    }
+  }
+
+  const handlePaste = () => {
+    pasteShape()
+  }
+
+  const handleDuplicate = () => {
+    if (selectedShapeId) {
+      copyShape(selectedShapeId)
+      pasteShape()
     }
   }
 
@@ -150,9 +207,15 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
     }
   }
 
+  const handleSelectAll = () => {
+    // Implementation for select all would go here
+    console.log('Select all shapes')
+  }
+
   const tools = [
     { id: 'select', icon: MousePointer2, label: 'تحديد', shortcut: 'V' },
     { id: 'hand', icon: Hand, label: 'يد', shortcut: 'H' },
+    { id: 'move', icon: Move, label: 'نقل', shortcut: 'M' },
   ]
 
   const shapes_list = [
@@ -165,6 +228,8 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
     { id: 'barcode', icon: ScanLine, label: 'باركود', shortcut: 'B' },
   ]
 
+  const zoomLevels = [25, 50, 75, 100, 125, 150, 200, 300, 400, 500]
+
   // Keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -174,41 +239,102 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
       }
 
       // Tool shortcuts
-      if (e.key.toLowerCase() === 'v') {
+      if (e.key.toLowerCase() === 'v' && !e.ctrlKey && !e.metaKey) {
         setSelectedTool('select')
         return
       }
-      if (e.key.toLowerCase() === 'h') {
+      if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) {
         setSelectedTool('hand')
+        return
+      }
+      if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.metaKey) {
+        setSelectedTool('move')
         return
       }
 
       // Shape shortcuts
-      if (e.key.toLowerCase() === 'r') {
+      if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
         handleAddShape('rect')
         return
       }
-      if (e.key.toLowerCase() === 'o') {
+      if (e.key.toLowerCase() === 'o' && !e.ctrlKey && !e.metaKey) {
         handleAddShape('circle')
         return
       }
 
-      // Action shortcuts
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedShapeId) {
-        e.preventDefault()
-        handleCopy()
-        return
+      // Action shortcuts with modifiers
+      if ((e.ctrlKey || e.metaKey)) {
+        switch (e.key.toLowerCase()) {
+          case 'c':
+            if (selectedShapeId) {
+              e.preventDefault()
+              handleCopy()
+            }
+            break
+          case 'x':
+            if (selectedShapeId) {
+              e.preventDefault()
+              handleCut()
+            }
+            break
+          case 'v':
+            if (clipboard.length > 0) {
+              e.preventDefault()
+              handlePaste()
+            }
+            break
+          case 'd':
+            if (selectedShapeId) {
+              e.preventDefault()
+              handleDuplicate()
+            }
+            break
+          case 'a':
+            e.preventDefault()
+            handleSelectAll()
+            break
+          case 'z':
+            if (e.shiftKey) {
+              e.preventDefault()
+              redo()
+            } else {
+              e.preventDefault()
+              undo()
+            }
+            break
+          case 'y':
+            e.preventDefault()
+            redo()
+            break
+          case '0':
+            e.preventDefault()
+            handleFitToScreen()
+            break
+          case '1':
+            e.preventDefault()
+            handleResetZoom()
+            break
+          case '=':
+          case '+':
+            e.preventDefault()
+            handleZoomIn()
+            break
+          case '-':
+            e.preventDefault()
+            handleZoomOut()
+            break
+        }
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && clipboard.length > 0) {
-        e.preventDefault()
-        pasteShape()
-        return
+
+      // Delete key
+      if (e.key === 'Delete' && selectedShapeId) {
+        handleDelete()
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && selectedShapeId) {
-        e.preventDefault()
-        copyShape(selectedShapeId)
-        pasteShape()
-        return
+
+      // Escape key
+      if (e.key === 'Escape') {
+        selectShape(null)
+        setSelectedTool('select')
       }
     }
 
@@ -221,6 +347,17 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
       <div className="flex items-center justify-between px-4 py-2">
         {/* Left Section - File Operations */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenTemplates}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
+            title="مكتبة القوالب"
+          >
+            <BookTemplate className="w-4 h-4" />
+            <span className="hidden sm:inline">قوالب</span>
+          </button>
+
+          <div className="w-px h-6 bg-gray-300" />
+
           <button
             onClick={onSave}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
@@ -298,8 +435,8 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
               onClick={() => setShowShapesPanel(!showShapesPanel)}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">إضافة عنصر</span>
+              <Shapes className="w-4 h-4" />
+              <span className="hidden sm:inline">أشكال</span>
             </button>
 
             {showShapesPanel && (
@@ -321,53 +458,147 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
             )}
           </div>
 
+          {/* Add Image */}
+          <button
+            onClick={onOpenImageUploader}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+            title="إضافة صورة"
+          >
+            <Image className="w-4 h-4" />
+            <span className="hidden sm:inline">صورة</span>
+          </button>
+
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+
+          {/* Edit Tools */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCopy}
+              disabled={!selectedShapeId}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="نسخ (Ctrl+C)"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleCut}
+              disabled={!selectedShapeId}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="قص (Ctrl+X)"
+            >
+              <Scissors className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handlePaste}
+              disabled={clipboard.length === 0}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="لصق (Ctrl+V)"
+            >
+              <Clipboard className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+
           {/* View Controls */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={handleZoomOut}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
-              title="تصغير"
+              title="تصغير (Ctrl+-)"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
 
-            <span className="px-2 py-1 text-xs text-gray-600 min-w-[3rem] text-center">
-              {Math.round(canvasSettings.zoom * 100)}%
-            </span>
+            <select
+              value={Math.round(canvasSettings.zoom * 100)}
+              onChange={(e) => setZoom(parseInt(e.target.value) / 100)}
+              className="px-2 py-1 text-xs text-gray-600 bg-transparent border-none focus:outline-none min-w-[4rem] text-center"
+            >
+              {zoomLevels.map(level => (
+                <option key={level} value={level}>{level}%</option>
+              ))}
+            </select>
 
             <button
               onClick={handleZoomIn}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
-              title="تكبير"
+              title="تكبير (Ctrl++)"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
+
+            <button
+              onClick={handleFitToScreen}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+              title="ملائمة الشاشة (Ctrl+0)"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
 
-          <button
-            onClick={handleToggleGrid}
-            className={`p-2 rounded-lg transition-colors ${
-              canvasSettings.showGrid
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-            }`}
-            title="إظهار/إخفاء الشبكة"
-          >
-            <Grid3X3 className="w-5 h-5" />
-          </button>
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+
+          {/* Canvas Tools */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleToggleGrid}
+              className={`p-2 rounded-lg transition-colors ${
+                canvasSettings.showGrid
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+              }`}
+              title="إظهار/إخفاء الشبكة"
+            >
+              <Grid3X3 className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleToggleSnap}
+              className={`p-2 rounded-lg transition-colors ${
+                canvasSettings.snapToGrid
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+              }`}
+              title="التصاق بالشبكة"
+            >
+              <Paintbrush className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={onToggleRulers}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              title="إظهار/إخفاء المساطر"
+            >
+              <Ruler className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={onToggleAlignment}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              title="أدوات المحاذاة"
+            >
+              <AlignCenter className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Right Section - Selection Controls */}
+        {/* Right Section - Canvas and Selection Controls */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenCustomSize}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+            title="حجم مخصص"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">حجم</span>
+          </button>
+
           {selectedShape && (
             <>
-              <button
-                onClick={handleCopy}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="نسخ (Ctrl+C)"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
+              <div className="w-px h-6 bg-gray-300" />
 
               <button
                 onClick={handleToggleVisibility}
@@ -400,12 +631,10 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
               >
                 <Trash2 className="w-4 h-4" />
               </button>
-
-              <div className="w-px h-6 bg-gray-300 mx-2" />
             </>
           )}
 
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 mr-4">
             {shapes.length} عنصر
             {selectedShape && ` | محدد: ${selectedShape.type}`}
           </div>
@@ -422,9 +651,14 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({ onExport, onSave, onL
               الموضع: {Math.round(selectedShape.position.x)}, {Math.round(selectedShape.position.y)}
             </span>
           )}
+          {selectedShape && (
+            <span>
+              الأبعاد: {Math.round(selectedShape.size.width)}×{Math.round(selectedShape.size.height)}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4">
-          <span>اختصارات: V (تحديد) | R (مستطيل) | O (دائرة) | Ctrl+Z (تراجع)</span>
+          <span>اختصارات: V (تحديد) | H (يد) | R (مستطيل) | O (دائرة) | Ctrl+Z (تراجع) | Ctrl+C (نسخ) | Ctrl+V (لصق)</span>
         </div>
       </div>
     </div>
