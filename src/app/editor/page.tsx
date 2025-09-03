@@ -209,12 +209,6 @@ export default function EditorPage() {
 
         {/* Right Panel - Layers */}
         <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
-          <div className="p-4 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Layers className="w-5 h-5" />
-              الطبقات
-            </h3>
-          </div>
           <AdvancedLayersPanel className="h-full" />
         </div>
       </div>
