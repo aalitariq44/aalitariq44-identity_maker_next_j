@@ -61,8 +61,12 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
   // Enhanced keyboard event handlers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Handle space key for panning
-      if (e.code === 'Space' && !isSpacePressed) {
+      // Skip handling space key if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isInputField = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      
+      // Handle space key for panning (only if not in input field)
+      if (e.code === 'Space' && !isSpacePressed && !isInputField) {
         e.preventDefault()
         setIsSpacePressed(true)
         return
@@ -142,7 +146,11 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      // Skip handling space key if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isInputField = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      
+      if (e.code === 'Space' && !isInputField) {
         setIsSpacePressed(false)
         setIsPanning(false)
       }
