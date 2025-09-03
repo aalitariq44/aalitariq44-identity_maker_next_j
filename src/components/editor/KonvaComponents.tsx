@@ -3,14 +3,27 @@
 // This file dynamically imports Konva components only on the client side
 import { ComponentType, useEffect, useState } from 'react'
 
+interface KonvaProps {
+  [key: string]: unknown
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Stage: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Layer: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Rect: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Circle: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Text: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Line: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Transformer: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Image: ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Konva: any = null
 
 // Create a promise to track when Konva is loaded
@@ -65,7 +78,7 @@ const loadKonva = (): Promise<void> => {
       Line = Fallback
       Transformer = Fallback
       Image = Fallback
-      Konva = {}
+      Konva = { Node: {} } as any
       resolve()
     }
   })

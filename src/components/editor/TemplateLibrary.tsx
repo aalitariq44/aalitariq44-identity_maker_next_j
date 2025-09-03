@@ -10,7 +10,7 @@ interface Template {
   description: string
   category: string
   thumbnail: string
-  data: any
+  data: { shapes: unknown[]; canvasSettings: unknown } // eslint-disable-line @typescript-eslint/no-explicit-any
   featured: boolean
   tags: string[]
   size: { width: number; height: number }

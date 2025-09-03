@@ -104,7 +104,7 @@ export const useEditorStore = create<EditorStore>()(
           
           // If this is a text shape, ensure dimensions are correct
           if (newShape.type === 'text') {
-            const textShape = newShape as any
+            const textShape = newShape as { text: string; fontSize: number; fontFamily: string } & typeof newShape
             const dimensions = calculateTextDimensions(
               textShape.text,
               textShape.fontSize,
@@ -150,7 +150,7 @@ export const useEditorStore = create<EditorStore>()(
             
             // If this is a text shape and text/font properties changed, recalculate dimensions
             if (shape.type === 'text' && ('text' in updates || 'fontSize' in updates || 'fontFamily' in updates)) {
-              const textShape = state.shapes[shapeIndex] as any
+              const textShape = state.shapes[shapeIndex] as { text: string; fontSize: number; fontFamily: string } & typeof shape
               const dimensions = calculateTextDimensions(
                 textShape.text,
                 textShape.fontSize,
@@ -325,7 +325,7 @@ export const useEditorStore = create<EditorStore>()(
             // Recalculate text dimensions for all text shapes
             state.shapes.forEach(shape => {
               if (shape.type === 'text') {
-                const textShape = shape as any
+                const textShape = shape as { text: string; fontSize: number; fontFamily: string } & typeof shape
                 const dimensions = calculateTextDimensions(
                   textShape.text,
                   textShape.fontSize,
@@ -413,11 +413,8 @@ export const useEditorStore = create<EditorStore>()(
       },
       
       // Multi-selection actions
-      selectMultiple: (shapeIds: string[]) => {
-        set((state) => {
-          // Store multi-selection in a separate property if needed
-          // For now, we'll handle this in the UI components
-        })
+      selectMultiple: () => {
+        // This will be handled by the UI components
       },
       
       getMultiSelection: () => {
@@ -453,11 +450,9 @@ export const useEditorStore = create<EditorStore>()(
         })
       },
       
-      panCanvas: (deltaX: number, deltaY: number) => {
-        set((state) => {
-          // Pan offset can be stored in canvas settings if needed
-          // For now, this will be handled by the canvas component
-        })
+      panCanvas: () => {
+        // Pan offset can be stored in canvas settings if needed
+        // For now, this will be handled by the canvas component
       },
       
       resetView: () => {

@@ -9,7 +9,6 @@ export const PropertiesPanel: React.FC = () => {
   const {
     shapes,
     selectedShapeId,
-    updateShape,
     canvasSettings,
     updateCanvasSettings,
     toggleOrientation,
@@ -770,6 +769,7 @@ const PersonProperties: React.FC<{ shape: PersonShape }> = ({ shape }) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">معاينة الصورة</label>
           <div className="w-full h-32 border border-gray-300 rounded overflow-hidden bg-gray-50 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={shape.src}
               alt="Preview"

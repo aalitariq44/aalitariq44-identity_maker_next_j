@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useCallback } from 'react'
 import { useEditorStore } from '@/store/useEditorStore'
-import { Upload, X, Image as ImageIcon, FileImage, Download } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
+import NextImage from 'next/image'
 
 interface ImageUploaderProps {
   isOpen: boolean
@@ -16,37 +17,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ isOpen, onClose }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addShape } = useEditorStore()
 
-  // Handle drag events
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
-  }, [])
-
-  // Handle drop event
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files)
-    }
-  }, [])
-
-  // Handle file selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFiles(e.target.files)
-    }
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = error => reject(error)
+    })
   }
 
   // Process uploaded files
-  const handleFiles = async (files: FileList) => {
+  const handleFiles = useCallback(async (files: FileList) => {
     setUploading(true)
     const newImages: string[] = []
 
@@ -75,22 +57,41 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ isOpen, onClose }) => {
 
     setUploadedImages(prev => [...prev, ...newImages])
     setUploading(false)
-  }
+  }, [])
 
-  // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = error => reject(error)
-    })
+  // Handle drag events
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }, [])
+
+  // Handle drop event
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files)
+    }
+  }, [handleFiles])
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(e.target.files)
+    }
   }
 
   // Add image to canvas
   const addImageToCanvas = (imageUrl: string) => {
     // Create an image object to get dimensions
-    const img = new Image()
+    const img = new (window as any).Image() as HTMLImageElement
     img.onload = () => {
       const maxWidth = 300
       const maxHeight = 300
@@ -232,9 +233,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ isOpen, onClose }) => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {uploadedImages.map((imageUrl, index) => (
                   <div key={index} className="relative group">
-                    <img
+                    <NextImage
                       src={imageUrl}
                       alt={`صورة مرفوعة ${index + 1}`}
+                      width={128}
+                      height={128}
                       className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => addImageToCanvas(imageUrl)}
                     />
@@ -259,9 +262,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ isOpen, onClose }) => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {stockImages.map((imageUrl, index) => (
                 <div key={index} className="relative group">
-                  <img
+                  <NextImage
                     src={imageUrl}
                     alt={`صورة جاهزة ${index + 1}`}
+                    width={96}
+                    height={96}
                     className="w-full h-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => addImageToCanvas(imageUrl)}
                   />

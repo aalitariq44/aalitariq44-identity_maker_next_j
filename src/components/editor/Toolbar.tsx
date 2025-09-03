@@ -15,8 +15,6 @@ import {
   Trash2,
   RotateCcw,
   Grid3X3,
-  ZoomIn,
-  ZoomOut,
   Move,
   MousePointer,
   User,
@@ -34,12 +32,10 @@ import {
 } from '@/lib/konvaUtils'
 
 interface ToolbarProps {
-  onExport?: () => void
-  onSave?: () => void
-  onLoad?: () => void
+  // Props removed as they're not used
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) => {
+export const Toolbar: React.FC<ToolbarProps> = () => {
   const {
     addShape,
     selectedShapeId,
@@ -52,7 +48,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
     canvasSettings,
     updateCanvasSettings,
     setBackgroundImage,
-    removeBackgroundImage,
     clearCanvas,
     history,
     shapes,

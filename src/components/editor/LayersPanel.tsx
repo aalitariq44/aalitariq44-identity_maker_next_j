@@ -33,10 +33,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({ className = "" }) => {
     selectShape,
     deleteShape,
     updateShape,
-    bringToFront,
-    sendToBack,
-    bringForward,
-    sendBackward,
+    reorderLayers,
   } = useEditorStore()
 
   // Sort shapes by z-index (highest first for display)
@@ -74,7 +71,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({ className = "" }) => {
       case 'circle':
         return 'دائرة'
       case 'text':
-        return (shape as any).text || 'نص'
+        return (shape as any).text || 'نص' // eslint-disable-line @typescript-eslint/no-explicit-any
       case 'triangle':
         return 'مثلث'
       case 'image':
@@ -99,19 +96,29 @@ const LayersPanel: React.FC<LayersPanelProps> = ({ className = "" }) => {
   }
 
   const handleMoveUp = (shapeId: string) => {
-    bringForward(shapeId)
+    const shape = shapes.find(s => s.id === shapeId)
+    if (shape) {
+      const maxZIndex = Math.max(...shapes.map(s => s.zIndex))
+      updateShape(shapeId, { zIndex: Math.min(shape.zIndex + 1, maxZIndex) })
+    }
   }
 
   const handleMoveDown = (shapeId: string) => {
-    sendBackward(shapeId)
+    const shape = shapes.find(s => s.id === shapeId)
+    if (shape) {
+      const minZIndex = Math.min(...shapes.map(s => s.zIndex))
+      updateShape(shapeId, { zIndex: Math.max(shape.zIndex - 1, minZIndex) })
+    }
   }
 
   const handleMoveToTop = (shapeId: string) => {
-    bringToFront(shapeId)
+    const maxZIndex = Math.max(...shapes.map(s => s.zIndex))
+    updateShape(shapeId, { zIndex: maxZIndex + 1 })
   }
 
   const handleMoveToBottom = (shapeId: string) => {
-    sendToBack(shapeId)
+    const minZIndex = Math.min(...shapes.map(s => s.zIndex))
+    updateShape(shapeId, { zIndex: minZIndex - 1 })
   }
 
   return (

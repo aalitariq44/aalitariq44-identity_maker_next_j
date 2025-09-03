@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useEditorStore } from '@/store/useEditorStore'
-import type { Shape } from '@/types/shapes'
+import type { Shape, RectShape, CircleShape, TextShape, TriangleShape, ImageShape } from '@/types/shapes'
 
 interface ShapePreviewProps {
   shape: Shape
@@ -38,7 +37,7 @@ const ShapePreview: React.FC<ShapePreviewProps> = ({ shape, size = 40 }) => {
     // Draw shape based on type
     switch (shape.type) {
       case 'rect':
-        const rectShape = shape as any
+        const rectShape = shape as RectShape
         ctx.fillStyle = rectShape.fill
         ctx.strokeStyle = rectShape.stroke
         ctx.lineWidth = rectShape.strokeWidth / scale
@@ -49,7 +48,7 @@ const ShapePreview: React.FC<ShapePreviewProps> = ({ shape, size = 40 }) => {
         break
 
       case 'circle':
-        const circleShape = shape as any
+        const circleShape = shape as CircleShape
         const radius = circleShape.radius
         ctx.beginPath()
         ctx.arc(radius, radius, radius, 0, 2 * Math.PI)
@@ -63,14 +62,14 @@ const ShapePreview: React.FC<ShapePreviewProps> = ({ shape, size = 40 }) => {
         break
 
       case 'text':
-        const textShape = shape as any
+        const textShape = shape as TextShape
         ctx.font = `${textShape.fontSize * scale}px ${textShape.fontFamily}`
         ctx.fillStyle = textShape.fill
         ctx.fillText(textShape.text.substring(0, 10), 0, textShape.fontSize * scale)
         break
 
       case 'triangle':
-        const triangleShape = shape as any
+        const triangleShape = shape as TriangleShape
         const points = triangleShape.points
         ctx.beginPath()
         ctx.moveTo(points[0], points[1])
@@ -98,7 +97,7 @@ const ShapePreview: React.FC<ShapePreviewProps> = ({ shape, size = 40 }) => {
         break
 
       case 'qr':
-        const qrShape = shape as any
+        const qrShape = shape as { backgroundColor: string; foregroundColor: string } & Shape
         ctx.fillStyle = qrShape.backgroundColor
         ctx.fillRect(0, 0, shape.size.width, shape.size.height)
         ctx.fillStyle = qrShape.foregroundColor
@@ -115,7 +114,7 @@ const ShapePreview: React.FC<ShapePreviewProps> = ({ shape, size = 40 }) => {
         break
 
       case 'barcode':
-        const barcodeShape = shape as any
+        const barcodeShape = shape as { backgroundColor: string; lineColor: string } & Shape
         ctx.fillStyle = barcodeShape.backgroundColor
         ctx.fillRect(0, 0, shape.size.width, shape.size.height)
         ctx.fillStyle = barcodeShape.lineColor

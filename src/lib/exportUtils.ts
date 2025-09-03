@@ -115,7 +115,7 @@ export const exportCanvasAsPDF = async (
   }
 }
 
-export const saveProjectAsJSON = (projectData: any, filename?: string): void => {
+export const saveProjectAsJSON = (projectData: { shapes: unknown[]; canvasSettings: unknown }, filename?: string): void => {
   const dataStr = JSON.stringify(projectData, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
   
@@ -130,7 +130,7 @@ export const saveProjectAsJSON = (projectData: any, filename?: string): void => 
   URL.revokeObjectURL(link.href)
 }
 
-export const loadProjectFromJSON = (): Promise<any> => {
+export const loadProjectFromJSON = (): Promise<{ shapes: unknown[]; canvasSettings: unknown }> => {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -149,7 +149,7 @@ export const loadProjectFromJSON = (): Promise<any> => {
           const content = e.target?.result as string
           const data = JSON.parse(content)
           resolve(data)
-        } catch (error) {
+        } catch {
           reject(new Error('Invalid JSON file'))
         }
       }

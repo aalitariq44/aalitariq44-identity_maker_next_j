@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { useEditorStore } from '@/store/useEditorStore'
-import type { Shape, RectShape, CircleShape, TextShape, TriangleShape, PersonShape, QRShape, BarcodeShape } from '@/types/shapes'
+import type { Shape, CircleShape, PersonShape, QRShape, BarcodeShape, RectShape, TextShape, TriangleShape } from '@/types/shapes'
 import { snapToGrid } from '@/lib/konvaUtils'
 
 interface SimpleCanvasStageProps {
@@ -330,8 +330,8 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
 
     if (isResizing && resizeHandle) {
       const { position: initialPos, size: initialSize } = initialShapeState
-      let newPosition = { ...initialPos }
-      let newSize = { ...initialSize }
+      const newPosition = { ...initialPos }
+      const newSize = { ...initialSize }
 
       const minSize = 10 // Minimum size constraint
 
@@ -637,37 +637,39 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       
       switch (shape.type) {
         case 'rect':
-          context.fillStyle = (shape as any).fill
-          context.strokeStyle = (shape as any).stroke
-          context.lineWidth = (shape as any).strokeWidth
+          const rectShape = shape as RectShape
+          context.fillStyle = rectShape.fill
+          context.strokeStyle = rectShape.stroke
+          context.lineWidth = rectShape.strokeWidth
           context.fillRect(0, 0, shape.size.width, shape.size.height)
-          if ((shape as any).strokeWidth > 0) {
+          if (rectShape.strokeWidth > 0) {
             context.strokeRect(0, 0, shape.size.width, shape.size.height)
           }
           break
           
         case 'circle':
-          const radius = (shape as any).radius
+          const circleShape = shape as CircleShape
+          const radius = circleShape.radius
           context.beginPath()
           context.arc(radius, radius, radius, 0, 2 * Math.PI)
-          context.fillStyle = (shape as any).fill
+          context.fillStyle = circleShape.fill
           context.fill()
-          context.strokeStyle = (shape as any).stroke
-          context.lineWidth = (shape as any).strokeWidth
-          if ((shape as any).strokeWidth > 0) {
+          context.strokeStyle = circleShape.stroke
+          context.lineWidth = circleShape.strokeWidth
+          if (circleShape.strokeWidth > 0) {
             context.stroke()
           }
           break
           
         case 'text':
-          const textShape = shape as any
+          const textShape = shape as TextShape
           context.font = `${textShape.fontSize}px ${textShape.fontFamily}`
           context.fillStyle = textShape.fill
           context.fillText(textShape.text, 0, textShape.fontSize)
           break
           
         case 'triangle':
-          const triangleShape = shape as any
+          const triangleShape = shape as TriangleShape
           const points = triangleShape.points
           context.beginPath()
           context.moveTo(points[0], points[1])
