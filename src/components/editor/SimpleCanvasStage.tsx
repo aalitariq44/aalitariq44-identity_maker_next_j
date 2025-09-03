@@ -66,7 +66,7 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       // Only handle other keyboard events when we have a selected shape
       if (!selectedShapeId) return
 
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (e.key === 'Delete') {
         e.preventDefault()
         deleteShape(selectedShapeId)
       }

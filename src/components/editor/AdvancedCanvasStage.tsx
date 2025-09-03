@@ -97,8 +97,8 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
       // Only handle other keyboard events when we have a selected shape
       if (!selectedShapeId && multiSelection.length === 0) return
 
-      // Handle Delete/Backspace
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Handle Delete only
+      if (e.key === 'Delete') {
         e.preventDefault()
         if (multiSelection.length > 0) {
           multiSelection.forEach(id => deleteShape(id))

@@ -41,8 +41,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Delete selected shape with Delete or Backspace key
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedShapeId) {
+      // Delete selected shape with Delete key only
+      if (e.key === 'Delete' && selectedShapeId) {
         e.preventDefault()
         const selectedShape = shapes.find(s => s.id === selectedShapeId)
         if (selectedShape && !selectedShape.locked) {
