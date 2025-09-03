@@ -361,33 +361,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
           >
             مسح الكل
           </button>
-          
-          {onLoad && (
-            <button
-              onClick={onLoad}
-              className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
-            >
-              فتح مشروع
-            </button>
-          )}
-          
-          {onSave && (
-            <button
-              onClick={onSave}
-              className="px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors"
-            >
-              حفظ المشروع
-            </button>
-          )}
-          
-          {onExport && (
-            <button
-              onClick={onExport}
-              className="px-3 py-2 text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition-colors"
-            >
-              تصدير
-            </button>
-          )}
         </div>
       </div>
     </div>
