@@ -49,11 +49,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
     removeBackgroundImage,
     clearCanvas,
     history,
+    shapes,
   } = useEditorStore()
+
+  // Helper function to get a good position for new shapes
+  const getNextShapePosition = () => {
+    const baseX = 100
+    const baseY = 100
+    const offset = shapes.length * 30 // Offset each new shape by 30px
+    
+    // Keep shapes within canvas bounds
+    const x = baseX + (offset % (canvasSettings.width - 200))
+    const y = baseY + (Math.floor(offset / (canvasSettings.width - 200)) * 30) % (canvasSettings.height - 200)
+    
+    return { x, y }
+  }
 
   const handleAddRect = () => {
     console.log('Adding rectangle...')
-    const rect = createDefaultRect(50, 50)
+    const position = getNextShapePosition()
+    const rect = createDefaultRect(position.x, position.y)
     console.log('Rectangle created:', rect)
     addShape(rect)
     console.log('Rectangle added to store')
@@ -61,7 +76,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
 
   const handleAddCircle = () => {
     console.log('Adding circle...')
-    const circle = createDefaultCircle(100, 100)
+    const position = getNextShapePosition()
+    const circle = createDefaultCircle(position.x, position.y)
     console.log('Circle created:', circle)
     addShape(circle)
     console.log('Circle added to store')
@@ -69,7 +85,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
 
   const handleAddText = () => {
     console.log('Adding text...')
-    const text = createDefaultText(150, 150)
+    const position = getNextShapePosition()
+    const text = createDefaultText(position.x, position.y)
     console.log('Text created:', text)
     addShape(text)
     console.log('Text added to store')
@@ -77,7 +94,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
 
   const handleAddTriangle = () => {
     console.log('Adding triangle...')
-    const triangle = createDefaultTriangle(200, 200)
+    const position = getNextShapePosition()
+    const triangle = createDefaultTriangle(position.x, position.y)
     console.log('Triangle created:', triangle)
     addShape(triangle)
     console.log('Triangle added to store')
@@ -137,32 +155,32 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onExport, onSave, onLoad }) =>
           <div className="flex items-center gap-1 border-r border-gray-300 pr-4">
             <button
               onClick={handleAddRect}
-              className="p-2 rounded hover:bg-gray-100 transition-colors"
-              title="إضافة مستطيل"
+              className="p-2 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors"
+              title="إضافة مستطيل (يمكن تحريكه وتغيير حجمه وتدويره)"
             >
               <Square className="w-5 h-5" />
             </button>
             
             <button
               onClick={handleAddCircle}
-              className="p-2 rounded hover:bg-gray-100 transition-colors"
-              title="إضافة دائرة"
+              className="p-2 rounded hover:bg-red-50 hover:text-red-600 transition-colors"
+              title="إضافة دائرة (يمكن تحريكها وتغيير حجمها وتدويرها)"
             >
               <Circle className="w-5 h-5" />
             </button>
             
             <button
               onClick={handleAddText}
-              className="p-2 rounded hover:bg-gray-100 transition-colors"
-              title="إضافة نص"
+              className="p-2 rounded hover:bg-gray-50 transition-colors"
+              title="إضافة نص (يمكن تحريكه وتحريره وتدويره)"
             >
               <Type className="w-5 h-5" />
             </button>
             
             <button
               onClick={handleAddTriangle}
-              className="p-2 rounded hover:bg-gray-100 transition-colors"
-              title="إضافة مثلث"
+              className="p-2 rounded hover:bg-green-50 hover:text-green-600 transition-colors"
+              title="إضافة مثلث (يمكن تحريكه وتغيير حجمه وتدويره)"
             >
               <Triangle className="w-5 h-5" />
             </button>

@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { useEditorStore } from '@/store/useEditorStore'
+import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
+import { snapToGrid } from '@/lib/konvaUtils'
 
 interface SimpleCanvasStageProps {
   width: number
@@ -11,8 +13,16 @@ interface SimpleCanvasStageProps {
 export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, height }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null)
-  
-  const { shapes, canvasSettings } = useEditorStore()
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+  const {
+    shapes,
+    canvasSettings,
+    selectShape,
+    moveShape,
+  } = useEditorStore()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -20,6 +30,100 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       const ctx = canvas.getContext('2d')
       setContext(ctx)
     }
+  }, [])
+
+  // Function to check if point is inside shape
+  const isPointInShape = useCallback((point: { x: number; y: number }, shape: Shape): boolean => {
+    switch (shape.type) {
+      case 'rect':
+        return (
+          point.x >= shape.position.x &&
+          point.x <= shape.position.x + shape.size.width &&
+          point.y >= shape.position.y &&
+          point.y <= shape.position.y + shape.size.height
+        )
+      case 'circle':
+        const centerX = shape.position.x + (shape as CircleShape).radius
+        const centerY = shape.position.y + (shape as CircleShape).radius
+        const distance = Math.sqrt((point.x - centerX) ** 2 + (point.y - centerY) ** 2)
+        return distance <= (shape as CircleShape).radius
+      case 'text':
+        return (
+          point.x >= shape.position.x &&
+          point.x <= shape.position.x + shape.size.width &&
+          point.y >= shape.position.y &&
+          point.y <= shape.position.y + shape.size.height
+        )
+      case 'triangle':
+        // Simple triangle bounds check
+        return (
+          point.x >= shape.position.x &&
+          point.x <= shape.position.x + shape.size.width &&
+          point.y >= shape.position.y &&
+          point.y <= shape.position.y + shape.size.height
+        )
+      default:
+        return false
+    }
+  }, [])
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    // Find clicked shape
+    for (const shape of shapes) {
+      if (isPointInShape({ x, y }, shape)) {
+        setSelectedShapeId(shape.id)
+        selectShape(shape.id)
+        setIsDragging(true)
+        setDragOffset({ x: x - shape.position.x, y: y - shape.position.y })
+        return
+      }
+    }
+
+    // No shape clicked, deselect
+    setSelectedShapeId(null)
+    selectShape(null)
+  }, [shapes, isPointInShape, selectShape])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!canvasRef.current || !isDragging || !selectedShapeId) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    const shape = shapes.find(s => s.id === selectedShapeId)
+    if (!shape) return
+
+    let newX = x - dragOffset.x
+    let newY = y - dragOffset.y
+
+    if (canvasSettings.snapToGrid) {
+      newX = snapToGrid(newX, canvasSettings.gridSize)
+      newY = snapToGrid(newY, canvasSettings.gridSize)
+    }
+
+    moveShape(selectedShapeId, { x: newX, y: newY })
+  }, [isDragging, selectedShapeId, shapes, dragOffset, canvasSettings.snapToGrid, canvasSettings.gridSize, moveShape])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  // Draw selection rectangle
+  const drawSelection = useCallback((ctx: CanvasRenderingContext2D, shape: Shape) => {
+    ctx.save()
+    ctx.strokeStyle = '#0ea5e9'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+    ctx.strokeRect(shape.position.x - 5, shape.position.y - 5, shape.size.width + 10, shape.size.height + 10)
+    ctx.restore()
   }, [])
 
   useEffect(() => {
@@ -96,8 +200,13 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
       }
       
       context.restore()
+
+      // Draw selection if this shape is selected
+      if (shape.id === selectedShapeId) {
+        drawSelection(context, shape)
+      }
     })
-  }, [context, shapes, canvasSettings])
+  }, [context, shapes, canvasSettings, selectedShapeId, drawSelection])
 
   return (
     <div 
@@ -112,8 +221,13 @@ export const SimpleCanvasStage: React.FC<SimpleCanvasStageProps> = ({ width, hei
           border: '2px solid #333',
           backgroundColor: canvasSettings.backgroundColor,
           maxWidth: '100%',
-          maxHeight: '100%'
+          maxHeight: '100%',
+          cursor: isDragging ? 'grabbing' : 'default'
         }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       />
     </div>
   )

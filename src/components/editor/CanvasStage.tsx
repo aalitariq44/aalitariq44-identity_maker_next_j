@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { Stage, Layer, Rect, Circle, Text, Line, Transformer, Image, loadKonva } from './KonvaComponents'
+import { Stage, Layer, Rect, Circle, Text, Line, Transformer, Image, Konva, useKonva } from './KonvaComponents'
 import { useEditorStore } from '@/store/useEditorStore'
 import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/types/shapes'
 import Grid from './Grid'
@@ -16,7 +16,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [isKonvaLoaded, setIsKonvaLoaded] = useState(false)
+  const { isLoaded: isKonvaLoaded } = useKonva()
   const [backgroundImageObj, setBackgroundImageObj] = useState<HTMLImageElement | null>(null)
 
   const {
@@ -31,13 +31,38 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
 
   useEffect(() => {
     // Wait for Konva to load
-    loadKonva().then(() => {
+    if (isKonvaLoaded) {
       console.log('Konva loaded successfully')
-      setIsKonvaLoaded(true)
-    }).catch((error) => {
-      console.error('Failed to load Konva:', error)
-    })
-  }, [])
+    } else {
+      console.log('Waiting for Konva to load...')
+    }
+  }, [isKonvaLoaded])
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Delete selected shape with Delete or Backspace key
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedShapeId) {
+        e.preventDefault()
+        const selectedShape = shapes.find(s => s.id === selectedShapeId)
+        if (selectedShape && !selectedShape.locked) {
+          const { deleteShape } = useEditorStore.getState()
+          deleteShape(selectedShapeId)
+        }
+      }
+      
+      // Escape key to deselect
+      if (e.key === 'Escape') {
+        setSelectedId(null)
+        selectShape(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedShapeId, shapes, selectShape])
 
   // Debug canvas settings changes
   useEffect(() => {
@@ -69,40 +94,52 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   }, [canvasSettings.backgroundImage])
 
   const checkDeselect = useCallback((e: any) => {
-    if (!isKonvaLoaded) return
     const clickedOnEmpty = e.target === e.target.getStage()
     if (clickedOnEmpty) {
       setSelectedId(null)
       selectShape(null)
     }
-  }, [selectShape, isKonvaLoaded])
+  }, [selectShape])
 
   useEffect(() => {
     setSelectedId(selectedShapeId)
   }, [selectedShapeId])
 
   useEffect(() => {
-    if (!isKonvaLoaded) return
-    if (selectedId && transformerRef.current) {
-      const selectedNode = stageRef.current?.findOne(`#${selectedId}`)
-      if (selectedNode) {
-        transformerRef.current.nodes([selectedNode])
-        transformerRef.current.getLayer()?.batchDraw()
-      }
+    if (selectedId && transformerRef.current && stageRef.current) {
+      // Wait a bit for the shape to be rendered
+      setTimeout(() => {
+        const selectedNode = stageRef.current?.findOne(`#${selectedId}`)
+        if (selectedNode && transformerRef.current) {
+          console.log('Attaching transformer to shape:', selectedId)
+          transformerRef.current.nodes([selectedNode])
+          transformerRef.current.getLayer()?.batchDraw()
+        }
+      }, 50)
     } else if (transformerRef.current) {
       transformerRef.current.nodes([])
       transformerRef.current.getLayer()?.batchDraw()
     }
-  }, [selectedId, isKonvaLoaded])
+  }, [selectedId, shapes.length])
 
   const handleShapeSelect = useCallback((id: string) => {
     console.log('Shape selected:', id)
     setSelectedId(id)
     selectShape(id)
+    
+    // Force transformer update after selection
+    setTimeout(() => {
+      if (transformerRef.current && stageRef.current) {
+        const selectedNode = stageRef.current.findOne(`#${id}`)
+        if (selectedNode) {
+          transformerRef.current.nodes([selectedNode])
+          transformerRef.current.getLayer()?.batchDraw()
+        }
+      }
+    }, 10)
   }, [selectShape])
 
   const handleShapeDragEnd = useCallback((e: any, shapeId: string) => {
-    if (!isKonvaLoaded) return
     const node = e.target
     let newX = node.x()
     let newY = node.y()
@@ -114,29 +151,34 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
     }
 
     moveShape(shapeId, { x: newX, y: newY })
-  }, [moveShape, canvasSettings.snapToGrid, canvasSettings.gridSize, isKonvaLoaded])
+  }, [moveShape, canvasSettings.snapToGrid, canvasSettings.gridSize])
 
   const handleShapeTransform = useCallback((e: any, shapeId: string) => {
-    if (!isKonvaLoaded) return
     const node = e.target
     const scaleX = node.scaleX()
     const scaleY = node.scaleY()
 
-    let newWidth = Math.max(5, node.width() * scaleX)
-    let newHeight = Math.max(5, node.height() * scaleY)
+    let newWidth = Math.max(10, node.width() * scaleX)
+    let newHeight = Math.max(10, node.height() * scaleY)
 
     if (canvasSettings.snapToGrid) {
       newWidth = snapToGrid(newWidth, canvasSettings.gridSize)
       newHeight = snapToGrid(newHeight, canvasSettings.gridSize)
     }
 
+    // Reset scale to 1 and update width/height instead
     node.scaleX(1)
     node.scaleY(1)
     node.width(newWidth)
     node.height(newHeight)
 
+    // Update shape size in store
     resizeShape(shapeId, { width: newWidth, height: newHeight })
-  }, [resizeShape, canvasSettings.snapToGrid, canvasSettings.gridSize, isKonvaLoaded])
+    
+    // Also update rotation if it changed
+    const rotation = node.rotation()
+    updateShape(shapeId, { rotation })
+  }, [resizeShape, updateShape, canvasSettings.snapToGrid, canvasSettings.gridSize])
 
   const getBackgroundImageProps = () => {
     if (!backgroundImageObj) return null
@@ -183,11 +225,6 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
   }
 
   const renderShape = (shape: Shape) => {
-    if (!isKonvaLoaded) {
-      console.log('Konva not loaded yet, skipping shape render')
-      return null
-    }
-
     if (!Rect || !Circle || !Text || !Line) {
       console.log('Konva components not available yet')
       return null
@@ -207,6 +244,20 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
       onTap: () => handleShapeSelect(shape.id),
       onDragEnd: (e: any) => handleShapeDragEnd(e, shape.id),
       onTransformEnd: (e: any) => handleShapeTransform(e, shape.id),
+      onMouseEnter: (e: any) => {
+        // Change cursor to move when hovering over shapes
+        const container = e.target.getStage().container()
+        if (shape.locked) {
+          container.style.cursor = 'not-allowed'
+        } else {
+          container.style.cursor = 'move'
+        }
+      },
+      onMouseLeave: (e: any) => {
+        // Reset cursor when leaving shape
+        const container = e.target.getStage().container()
+        container.style.cursor = 'default'
+      },
     }
 
     try {
@@ -386,10 +437,24 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ width, height }) => {
                 ],
                 borderStroke: "#0ea5e9",
                 borderStrokeWidth: 2,
-                anchorFill: "#0ea5e9",
-                anchorStroke: "#0369a1",
-                anchorSize: 8,
-                anchorCornerRadius: 2,
+                borderDash: [0],
+                anchorFill: "#ffffff",
+                anchorStroke: "#0ea5e9",
+                anchorStrokeWidth: 2,
+                anchorSize: 12,
+                anchorCornerRadius: 6,
+                rotateAnchorOffset: 40,
+                rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
+                centeredScaling: false,
+                ignoreStroke: false,
+                padding: 8,
+                // Add visual feedback
+                onTransformStart: () => {
+                  // Could add animation or visual feedback here
+                },
+                onTransformEnd: () => {
+                  // Could add completion feedback here
+                },
               })
             ]
           })

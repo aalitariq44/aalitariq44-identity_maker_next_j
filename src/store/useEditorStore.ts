@@ -90,11 +90,19 @@ export const useEditorStore = create<EditorStore>()(
           } as Shape
           
           console.log('Store: New shape created', newShape)
-          state.shapes.push(newShape)
-          state.selectedShapeId = newShape.id
-          state.history.past.push([...state.shapes.slice(0, -1)])
+          
+          // Save current state to history before adding new shape
+          state.history.past.push([...state.shapes])
           state.history.future = []
+          
+          // Add the new shape
+          state.shapes.push(newShape)
+          
+          // Auto-select the new shape for immediate editing
+          state.selectedShapeId = newShape.id
+          
           console.log('Store: Shapes count now:', state.shapes.length)
+          console.log('Store: Selected shape ID:', state.selectedShapeId)
         })
       },
 

@@ -16,7 +16,7 @@ const CanvasStage = dynamic(() => import('./CanvasStage'), {
       className="canvas-container border border-gray-300 bg-white shadow-lg overflow-hidden flex items-center justify-center"
       style={{ width: 800, height: 600 }}
     >
-      <div className="text-gray-500">Loading Canvas...</div>
+      <div className="text-gray-500">جاري تحميل الكانفاس...</div>
     </div>
   )
 })

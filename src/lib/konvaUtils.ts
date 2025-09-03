@@ -3,7 +3,7 @@ import type { Shape, RectShape, CircleShape, TextShape, TriangleShape } from '@/
 export const createDefaultRect = (x: number = 100, y: number = 100): Omit<RectShape, 'id'> => ({
   type: 'rect',
   position: { x, y },
-  size: { width: 100, height: 100 },
+  size: { width: 120, height: 80 },
   rotation: 0,
   opacity: 1,
   visible: true,
@@ -12,7 +12,7 @@ export const createDefaultRect = (x: number = 100, y: number = 100): Omit<RectSh
   fill: '#3b82f6',
   stroke: '#1e40af',
   strokeWidth: 2,
-  cornerRadius: 0,
+  cornerRadius: 8,
 })
 
 export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<CircleShape, 'id'> => ({
@@ -33,22 +33,22 @@ export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<Circ
 export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextShape, 'id'> => ({
   type: 'text',
   position: { x, y },
-  size: { width: 200, height: 50 },
+  size: { width: 200, height: 60 },
   rotation: 0,
   opacity: 1,
   visible: true,
   locked: false,
   zIndex: 1,
   text: 'نص جديد',
-  fontSize: 16,
+  fontSize: 18,
   fontFamily: 'Arial',
   fontWeight: 'normal',
   fontStyle: 'normal',
-  fill: '#000000',
+  fill: '#1f2937',
   stroke: '',
   strokeWidth: 0,
-  align: 'left',
-  verticalAlign: 'top',
+  align: 'center',
+  verticalAlign: 'middle',
   lineHeight: 1.2,
   letterSpacing: 0,
 })
