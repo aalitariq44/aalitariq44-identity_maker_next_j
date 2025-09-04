@@ -72,113 +72,116 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Download className="w-8 h-8 text-white" />
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">تصدير التصميم</h2>
+            <p className="text-gray-600">اختر صيغة التصدير المناسبة لاحتياجاتك</p>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">
-            تصدير التصميم
-          </h3>
-          <p className="text-gray-600">
-            اختر صيغة التصدير المناسبة لاحتياجاتك
-            <span className="mr-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-              الاتجاه الحالي: {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
-            </span>
-          </p>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            ✕
+          </button>
         </div>
-        
-        <div className="space-y-4 mb-8">
-          {exportOptions.map((option) => {
-            const isSelected = selectedFormat === option.format
-            
-            return (
-              <button
-                key={option.format}
-                onClick={() => setSelectedFormat(option.format)}
-                disabled={isExporting}
-                className={`w-full p-6 border-2 rounded-xl text-right transition-all duration-300 disabled:opacity-50 ${
-                  getColorClasses(option.color, isSelected)
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-lg ${
-                    isSelected 
-                      ? `bg-${option.color}-100 text-${option.color}-600` 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {option.icon}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-lg">
-                        {option.title}
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-4 mb-8">
+            {exportOptions.map((option) => {
+              const isSelected = selectedFormat === option.format
+              
+              return (
+                <button
+                  key={option.format}
+                  onClick={() => setSelectedFormat(option.format)}
+                  disabled={isExporting}
+                  className={`w-full p-6 border-2 rounded-xl text-right transition-all duration-300 disabled:opacity-50 ${
+                    getColorClasses(option.color, isSelected)
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-lg ${
+                      isSelected 
+                        ? `bg-${option.color}-100 text-${option.color}-600` 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {option.icon}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-bold text-lg">
+                          {option.title}
+                        </div>
+                        <div className="text-sm px-2 py-1 bg-gray-100 rounded-full">
+                          {option.fileSize}
+                        </div>
                       </div>
-                      <div className="text-sm px-2 py-1 bg-gray-100 rounded-full">
-                        {option.fileSize}
+                      
+                      <p className="text-gray-600 mb-3 text-sm">
+                        {option.description}
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {option.pros.map((pro, index) => (
+                          <span
+                            key={index}
+                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
+                          >
+                            {pro}
+                          </span>
+                        ))}
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-3 text-sm">
-                      {option.description}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {option.pros.map((pro, index) => (
-                        <span
-                          key={index}
-                          className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
-                        >
-                          {pro}
-                        </span>
-                      ))}
-                    </div>
+                    {isSelected && (
+                      <div className={`w-6 h-6 bg-${option.color}-500 rounded-full flex items-center justify-center`}>
+                        <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                      </div>
+                    )}
                   </div>
-                  
-                  {isSelected && (
-                    <div className={`w-6 h-6 bg-${option.color}-500 rounded-full flex items-center justify-center`}>
-                      <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                    </div>
-                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+                <Eye className="w-5 h-5" />
+                <div>
+                  <div className="font-medium">نصائح للتصدير:</div>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>استخدم PNG للطباعة عالية الجودة</li>
+                    <li>استخدم JPG للمشاركة السريعة</li>
+                    <li>استخدم PDF للطباعة الاحترافية</li>
+                  </ul>
                 </div>
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <Eye className="w-5 h-5" />
-              <div>
-                <div className="font-medium">نصائح للتصدير:</div>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>استخدم PNG للطباعة عالية الجودة</li>
-                  <li>استخدم JPG للمشاركة السريعة</li>
-                  <li>استخدم PDF للطباعة الاحترافية</li>
-                </ul>
               </div>
+              
+              <button
+                onClick={toggleOrientation}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+                title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
+              >
+                <RotateCcw className="w-4 h-4" />
+                {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
+              </button>
             </div>
-            
-            <button
-              onClick={toggleOrientation}
-              disabled={isExporting}
-              className="flex items-center gap-2 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors disabled:opacity-50"
-              title={`تبديل إلى ${canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}`}
-            >
-              <RotateCcw className="w-4 h-4" />
-              {canvasSettings.orientation === 'landscape' ? 'عمودي' : 'أفقي'}
-            </button>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
             disabled={isExporting}
-            className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium disabled:opacity-50"
+            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             إلغاء
           </button>
@@ -186,7 +189,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="flex-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-300 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {isExporting ? (
               <>
@@ -195,7 +198,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </>
             ) : (
               <>
-                <Download className="w-5 h-5" />
+                <Download className="w-4 h-4" />
                 تصدير {selectedFormat.toUpperCase()}
               </>
             )}
