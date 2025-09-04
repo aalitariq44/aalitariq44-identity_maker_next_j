@@ -18,6 +18,12 @@ export interface BaseShape {
   visible: boolean
   locked: boolean
   zIndex: number
+  // Shadow properties
+  shadowEnabled: boolean
+  shadowColor: string
+  shadowBlur: number
+  shadowOffsetX: number
+  shadowOffsetY: number
 }
 
 export interface RectShape extends BaseShape {

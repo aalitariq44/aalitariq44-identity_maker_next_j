@@ -13,6 +13,12 @@ export const createDefaultRect = (x: number = 100, y: number = 100): Omit<RectSh
   stroke: '#1e40af',
   strokeWidth: 2,
   cornerRadius: 8,
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<CircleShape, 'id'> => ({
@@ -28,6 +34,12 @@ export const createDefaultCircle = (x: number = 100, y: number = 100): Omit<Circ
   stroke: '#dc2626',
   strokeWidth: 2,
   radius: 50,
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextShape, 'id'> => {
@@ -57,6 +69,12 @@ export const createDefaultText = (x: number = 100, y: number = 100): Omit<TextSh
     verticalAlign: 'middle',
     lineHeight: 1.2,
     letterSpacing: 0,
+    // Shadow properties
+    shadowEnabled: false,
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowBlur: 10,
+    shadowOffsetX: 5,
+    shadowOffsetY: 5,
   }
 }
 
@@ -73,6 +91,12 @@ export const createDefaultTriangle = (x: number = 100, y: number = 100): Omit<Tr
   stroke: '#059669',
   strokeWidth: 2,
   points: [50, 0, 0, 100, 100, 100],
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const createDefaultPerson = (x: number = 100, y: number = 100): Omit<PersonShape, 'id'> => ({
@@ -89,6 +113,12 @@ export const createDefaultPerson = (x: number = 100, y: number = 100): Omit<Pers
   borderRadius: 8,
   borderWidth: 2,
   borderColor: '#6b7280',
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const createDefaultQR = (x: number = 100, y: number = 100): Omit<QRShape, 'id'> => ({
@@ -103,6 +133,12 @@ export const createDefaultQR = (x: number = 100, y: number = 100): Omit<QRShape,
   data: 'https://example.com',
   backgroundColor: '#ffffff',
   foregroundColor: '#000000',
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const createDefaultBarcode = (x: number = 100, y: number = 100): Omit<BarcodeShape, 'id'> => ({
@@ -118,6 +154,12 @@ export const createDefaultBarcode = (x: number = 100, y: number = 100): Omit<Bar
   format: '128',
   backgroundColor: '#ffffff',
   lineColor: '#000000',
+  // Shadow properties
+  shadowEnabled: false,
+  shadowColor: 'rgba(0, 0, 0, 0.3)',
+  shadowBlur: 10,
+  shadowOffsetX: 5,
+  shadowOffsetY: 5,
 })
 
 export const snapToGrid = (value: number, gridSize: number): number => {

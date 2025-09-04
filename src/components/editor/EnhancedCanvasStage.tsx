@@ -57,6 +57,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     saveToHistory,
     setZoom,
     updateCanvasSettings,
+    moveShapeByOffset,
   } = useEditorStore()
 
   const selectedShape = shapes.find(shape => shape.id === selectedShapeId)
@@ -203,6 +204,39 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
         return
       }
 
+      // Arrow keys for moving selected shape
+      if (selectedShapeId && !isInputField) {
+        const moveDistance = e.shiftKey ? 10 : 1 // Move faster with Shift
+        let moved = false
+        
+        switch (e.key) {
+          case 'ArrowUp':
+            e.preventDefault()
+            moveShapeByOffset(selectedShapeId, 0, -moveDistance)
+            moved = true
+            break
+          case 'ArrowDown':
+            e.preventDefault()
+            moveShapeByOffset(selectedShapeId, 0, moveDistance)
+            moved = true
+            break
+          case 'ArrowLeft':
+            e.preventDefault()
+            moveShapeByOffset(selectedShapeId, -moveDistance, 0)
+            moved = true
+            break
+          case 'ArrowRight':
+            e.preventDefault()
+            moveShapeByOffset(selectedShapeId, moveDistance, 0)
+            moved = true
+            break
+        }
+        
+        if (moved) {
+          return
+        }
+      }
+
       // Zoom controls
       if ((e.ctrlKey || e.metaKey) && e.key === '0') {
         e.preventDefault()
@@ -273,6 +307,11 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
         setIsSpacePressed(false)
         setIsPanning(false)
       }
+      
+      // Save to history when arrow key movement ends
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selectedShapeId) {
+        saveToHistory()
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -282,7 +321,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [selectedShapeId, multiSelection, shapes, deleteShape, selectShape, undo, redo, isSpacePressed, canvasSettings.zoom, setZoom, resetView, fitToScreen])
+  }, [selectedShapeId, multiSelection, shapes, deleteShape, selectShape, undo, redo, isSpacePressed, canvasSettings.zoom, setZoom, resetView, fitToScreen, moveShapeByOffset, saveToHistory])
 
   // Point in shape detection with document coordinates
   const isPointInShape = useCallback((point: { x: number; y: number }, shape: Shape): boolean => {
@@ -725,6 +764,15 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       if (!shape.visible) return
       
       context.save()
+      
+      // Apply shadow if enabled
+      if (shape.shadowEnabled) {
+        context.shadowColor = shape.shadowColor
+        context.shadowBlur = shape.shadowBlur
+        context.shadowOffsetX = shape.shadowOffsetX
+        context.shadowOffsetY = shape.shadowOffsetY
+      }
+      
       // Center-based rotation
       const cx = shape.position.x + shape.size.width / 2
       const cy = shape.position.y + shape.size.height / 2
@@ -1033,12 +1081,41 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
               <span>Zoom in/out at cursor</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="bg-white text-blue-600 px-2 py-1 rounded font-mono text-xs">↑↓←→</span>
+              <span>Move selected shape (Shift for faster)</span>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="bg-white text-blue-600 px-2 py-1 rounded font-mono text-xs">Ctrl+0</span>
               <span>Reset view</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="bg-white text-blue-600 px-2 py-1 rounded font-mono text-xs">Ctrl+9</span>
               <span>Fit to screen</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Arrow Keys Guide when shape is selected */}
+      {selectedShape && !isSpacePressed && (
+        <div className="absolute bottom-4 right-4 bg-green-600 text-white px-6 py-4 rounded-xl shadow-xl">
+          <div className="text-sm font-semibold mb-3">🎯 Shape Movement:</div>
+          <div className="text-xs space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="bg-white text-green-600 px-2 py-1 rounded font-mono text-xs">↑↓←→</span>
+              <span>Move shape pixel by pixel</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="bg-white text-green-600 px-2 py-1 rounded font-mono text-xs">Shift + ↑↓←→</span>
+              <span>Move shape 10 pixels at a time</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="bg-white text-green-600 px-2 py-1 rounded font-mono text-xs">Delete</span>
+              <span>Delete selected shape</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="bg-white text-green-600 px-2 py-1 rounded font-mono text-xs">Esc</span>
+              <span>Deselect shape</span>
             </div>
           </div>
         </div>

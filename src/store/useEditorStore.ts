@@ -16,6 +16,7 @@ interface EditorStore extends EditorState {
   duplicateShape: (id: string) => void
   moveShape: (id: string, position: { x: number; y: number }) => void
   resizeShape: (id: string, size: { width: number; height: number }) => void
+  moveShapeByOffset: (id: string, deltaX: number, deltaY: number) => void
   
   // Canvas actions
   updateCanvasSettings: (settings: Partial<CanvasSettings>) => void
@@ -100,6 +101,12 @@ export const useEditorStore = create<EditorStore>()(
             ...shapeData,
             id: nanoid(),
             zIndex: maxZIndex + 1,
+            // Set default shadow properties if not provided
+            shadowEnabled: shapeData.shadowEnabled ?? false,
+            shadowColor: shapeData.shadowColor ?? 'rgba(0, 0, 0, 0.3)',
+            shadowBlur: shapeData.shadowBlur ?? 10,
+            shadowOffsetX: shapeData.shadowOffsetX ?? 5,
+            shadowOffsetY: shapeData.shadowOffsetY ?? 5,
           } as Shape
           
           // If this is a text shape, ensure dimensions are correct
@@ -214,6 +221,18 @@ export const useEditorStore = create<EditorStore>()(
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
             shape.position = position
+          }
+        })
+      },
+
+      moveShapeByOffset: (id: string, deltaX: number, deltaY: number) => {
+        set((state) => {
+          const shape = state.shapes.find((s) => s.id === id)
+          if (shape) {
+            shape.position = {
+              x: shape.position.x + deltaX,
+              y: shape.position.y + deltaY
+            }
           }
         })
       },

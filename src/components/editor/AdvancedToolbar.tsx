@@ -40,7 +40,8 @@ import {
   Clipboard,
   AlignCenter,
   BookTemplate,
-  Maximize2
+  Maximize2,
+  Zap
 } from 'lucide-react'
 import { createDefaultRect, createDefaultCircle, createDefaultTriangle, createDefaultText, createDefaultPerson, createDefaultQR, createDefaultBarcode } from '@/lib/konvaUtils'
 
@@ -150,6 +151,22 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({
   const handleToggleLock = () => {
     if (selectedShape) {
       updateShape(selectedShape.id, { locked: !selectedShape.locked })
+    }
+  }
+
+  const handleToggleShadow = () => {
+    if (selectedShape) {
+      const newShadowEnabled = !selectedShape.shadowEnabled
+      updateShape(selectedShape.id, { 
+        shadowEnabled: newShadowEnabled,
+        // Set default shadow values if enabling for the first time
+        ...(newShadowEnabled && !selectedShape.shadowColor ? {
+          shadowColor: 'rgba(0, 0, 0, 0.3)',
+          shadowBlur: 10,
+          shadowOffsetX: 5,
+          shadowOffsetY: 5,
+        } : {})
+      })
     }
   }
 
@@ -634,6 +651,18 @@ const AdvancedToolbar: React.FC<AdvancedToolbarProps> = ({
                 title={selectedShape.locked ? 'إلغاء القفل' : 'قفل'}
               >
                 {selectedShape.locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+              </button>
+
+              <button
+                onClick={handleToggleShadow}
+                className={`p-2 rounded-lg transition-colors ${
+                  selectedShape.shadowEnabled
+                    ? 'text-purple-600 hover:text-purple-800 hover:bg-purple-50 bg-purple-100'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+                title={selectedShape.shadowEnabled ? 'إلغاء الظل' : 'إضافة ظل'}
+              >
+                <Zap className="w-4 h-4" />
               </button>
 
               <button

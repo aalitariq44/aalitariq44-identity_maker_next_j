@@ -213,102 +213,82 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   className="w-full h-8 border border-gray-200 rounded cursor-pointer"
                 />
               </div>
-
-              {/* Shadow for Rect */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">الظل</label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">تفعيل الظل</span>
-                    <input
-                      type="checkbox"
-                      checked={(selectedShape as any).shadow?.enabled || false}
-                      onChange={(e) => handleShapeUpdate({
-                        shadow: {
-                          ...(selectedShape as any).shadow || {},
-                          enabled: e.target.checked
-                        }
-                      })}
-                      className="rounded"
-                    />
-                  </div>
-
-                  {(selectedShape as any).shadow?.enabled && (
-                    <div className="space-y-2 pl-2 border-l-2 border-gray-200">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">لون الظل</label>
-                        <input
-                          type="color"
-                          value={(selectedShape as any).shadow?.color || '#000000'}
-                          onChange={(e) => handleShapeUpdate({
-                            shadow: {
-                              ...(selectedShape as any).shadow || {},
-                              color: e.target.value
-                            }
-                          })}
-                          className="w-full h-6 border border-gray-200 rounded cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">X</label>
-                          <input
-                            type="number"
-                            min="-50"
-                            max="50"
-                            value={(selectedShape as any).shadow?.offsetX || 0}
-                            onChange={(e) => handleShapeUpdate({
-                              shadow: {
-                                ...(selectedShape as any).shadow || {},
-                                offsetX: Number(e.target.value)
-                              }
-                            })}
-                            className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Y</label>
-                          <input
-                            type="number"
-                            min="-50"
-                            max="50"
-                            value={(selectedShape as any).shadow?.offsetY || 0}
-                            onChange={(e) => handleShapeUpdate({
-                              shadow: {
-                                ...(selectedShape as any).shadow || {},
-                                offsetY: Number(e.target.value)
-                              }
-                            })}
-                            className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">الانتشار</label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="50"
-                          value={(selectedShape as any).shadow?.blur || 5}
-                          onChange={(e) => handleShapeUpdate({
-                            shadow: {
-                              ...(selectedShape as any).shadow || {},
-                              blur: Number(e.target.value)
-                            }
-                          })}
-                          className="w-full"
-                        />
-                        <span className="text-xs text-gray-500">{(selectedShape as any).shadow?.blur || 5}px</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}
+
+        {/* Universal Shadow Properties */}
+        <div className="p-3 bg-gray-50 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">الظل والتأثيرات</h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">تفعيل الظل</span>
+              <input
+                type="checkbox"
+                checked={selectedShape.shadowEnabled || false}
+                onChange={(e) => handleShapeUpdate({ shadowEnabled: e.target.checked })}
+                className="rounded"
+              />
+            </div>
+
+            {selectedShape.shadowEnabled && (
+              <div className="space-y-3 pl-2 border-l-2 border-blue-200">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">لون الظل</label>
+                  <input
+                    type="color"
+                    value={selectedShape.shadowColor || 'rgba(0, 0, 0, 0.3)'}
+                    onChange={(e) => handleShapeUpdate({ shadowColor: e.target.value })}
+                    className="w-full h-6 border border-gray-200 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">الإزاحة X</label>
+                    <input
+                      type="number"
+                      min="-50"
+                      max="50"
+                      value={selectedShape.shadowOffsetX || 5}
+                      onChange={(e) => handleShapeUpdate({ shadowOffsetX: Number(e.target.value) })}
+                      className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">الإزاحة Y</label>
+                    <input
+                      type="number"
+                      min="-50"
+                      max="50"
+                      value={selectedShape.shadowOffsetY || 5}
+                      onChange={(e) => handleShapeUpdate({ shadowOffsetY: Number(e.target.value) })}
+                      className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    انتشار الظل ({selectedShape.shadowBlur || 10}px)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={selectedShape.shadowBlur || 10}
+                    onChange={(e) => handleShapeUpdate({ shadowBlur: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="bg-blue-50 p-2 rounded text-xs text-blue-700">
+                  💡 يمكنك استخدام قيم سالبة للإزاحة لتحريك الظل في الاتجاه المعاكس
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {selectedShape.type === 'circle' && (
           <div className="p-3 bg-gray-50 rounded-lg">
@@ -323,6 +303,32 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون التعبئة</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).fill || '#000000'}
+                  onChange={(e) => handleShapeUpdate({ fill: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">لون الحدود</label>
+                <input
+                  type="color"
+                  value={(selectedShape as any).stroke || '#000000'}
+                  onChange={(e) => handleShapeUpdate({ stroke: e.target.value })}
+                  className="w-full h-8 border border-gray-200 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'triangle' && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">مثلث</h4>
+            <div className="space-y-2">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">لون التعبئة</label>
                 <input
@@ -384,6 +390,9 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   <option value="Comic Sans MS">Comic Sans MS</option>
                   <option value="Impact">Impact</option>
                   <option value="Tahoma">Tahoma</option>
+                  <option value="Cairo, sans-serif">Cairo (عربي)</option>
+                  <option value="Amiri, serif">Amiri (عربي)</option>
+                  <option value="Tajawal, sans-serif">Tajawal (عربي)</option>
                 </select>
               </div>
               <div>
