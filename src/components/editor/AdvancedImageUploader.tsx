@@ -373,7 +373,7 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
   // Sample stock images
   const stockImages = [
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-    'https://images.unsplash.com/photo-1494790108755-2616b612b1fc?w=400&h=400&fit=crop&crop=face',
+    'https://www.marefa.org/w/images/thumb/4/48/Outdoors-man-portrait_(cropped).jpg/1200px-Outdoors-man-portrait_(cropped).jpg',
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face',
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
   ]
@@ -663,7 +663,7 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                     alt={`صورة جاهزة ${index + 1}`}
                     width={128}
                     height={128}
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    className="w-full aspect-square object-cover rounded-lg border border-gray-200"
                   />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
                     <button
