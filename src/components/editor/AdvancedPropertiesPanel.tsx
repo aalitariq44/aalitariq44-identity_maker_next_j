@@ -393,6 +393,13 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   <option value="Cairo, sans-serif">Cairo (عربي)</option>
                   <option value="Amiri, serif">Amiri (عربي)</option>
                   <option value="Tajawal, sans-serif">Tajawal (عربي)</option>
+                  <option value="Noto Sans Arabic, sans-serif">Noto Sans Arabic (عربي)</option>
+                  <option value="El Messiri, serif">El Messiri (عربي)</option>
+                  <option value="Lateef, serif">Lateef (عربي)</option>
+                  <option value="Scheherazade New, serif">Scheherazade New (عربي)</option>
+                  <option value="Jomhuria, serif">Jomhuria (عربي)</option>
+                  <option value="Aref Ruqaa, serif">Aref Ruqaa (عربي)</option>
+                  <option value="Katibeh, cursive">Katibeh (عربي)</option>
                 </select>
               </div>
               <div>
