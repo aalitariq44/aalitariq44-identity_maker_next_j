@@ -39,6 +39,10 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
   const [documentPan, setDocumentPan] = useState({ x: 100, y: 100 }) // Start with some offset
   const [lastWheelTime, setLastWheelTime] = useState(0)
 
+  // Resizing states
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
+  const [resizeLocalStart, setResizeLocalStart] = useState({ x: 0, y: 0 })
+
   const {
     shapes,
     selectedShapeId,
@@ -383,6 +387,16 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
         } else {
           setIsResizing(true)
           setResizeHandle(hitHandle.key)
+          // Calculate local coordinates for resizing start
+          const cx = selectedShape.position.x + selectedShape.size.width / 2
+          const cy = selectedShape.position.y + selectedShape.size.height / 2
+          const dx = docX - cx
+          const dy = docY - cy
+          const rad = (-selectedShape.rotation * Math.PI) / 180
+          const lx = dx * Math.cos(rad) - dy * Math.sin(rad)
+          const ly = dx * Math.sin(rad) + dy * Math.cos(rad)
+          setInitialSize({ width: selectedShape.size.width, height: selectedShape.size.height })
+          setResizeLocalStart({ x: lx, y: ly })
         }
         return
       }
@@ -508,13 +522,19 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       const rad = (-shape.rotation * Math.PI) / 180
       const lx = dx * Math.cos(rad) - dy * Math.sin(rad)
       const ly = dx * Math.sin(rad) + dy * Math.cos(rad)
-      let newW = shape.size.width
-      let newH = shape.size.height
+      
+      const delta_lx = lx - resizeLocalStart.x
+      const delta_ly = ly - resizeLocalStart.y
+      
+      let newW = initialSize.width
+      let newH = initialSize.height
       const min = 10
-      if (['tl','ml','bl'].includes(resizeHandle)) newW = Math.max(min, (shape.size.width / 2) - lx) * 2
-      if (['tr','mr','br'].includes(resizeHandle)) newW = Math.max(min, (shape.size.width / 2) + lx) * 2
-      if (['tl','tm','tr'].includes(resizeHandle)) newH = Math.max(min, (shape.size.height / 2) - ly) * 2
-      if (['bl','bm','br'].includes(resizeHandle)) newH = Math.max(min, (shape.size.height / 2) + ly) * 2
+      
+      if (resizeHandle.includes('l')) newW = Math.max(min, initialSize.width - delta_lx * 2)
+      if (resizeHandle.includes('r')) newW = Math.max(min, initialSize.width + delta_lx * 2)
+      if (resizeHandle.includes('t')) newH = Math.max(min, initialSize.height - delta_ly * 2)
+      if (resizeHandle.includes('b')) newH = Math.max(min, initialSize.height + delta_ly * 2)
+      
       let nx = cx - newW / 2
       let ny = cy - newH / 2
       // Snap
@@ -555,7 +575,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
 
       moveShape(selectedShapeId, { x: newX, y: newY })
     }
-  }, [isPanning, isSpacePressed, isMiddleMousePanning, selectionBox, isDragging, isResizing, isRotating, selectedShape, getShapeScreenHandles, isPointInShape, documentPan, canvasSettings, dragOffset, moveShape])
+  }, [isPanning, isSpacePressed, isMiddleMousePanning, selectionBox, isDragging, isResizing, isRotating, selectedShape, getShapeScreenHandles, isPointInShape, documentPan, canvasSettings, dragOffset, moveShape, initialSize, resizeLocalStart, resizeHandle, updateShape])
 
   const handleMouseUp = useCallback((e?: React.MouseEvent) => {
     if (e?.button === 1) {
@@ -602,6 +622,8 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     setIsPanning(false)
     setIsMiddleMousePanning(false)
     setResizeHandle(null)
+    setInitialSize({ width: 0, height: 0 })
+    setResizeLocalStart({ x: 0, y: 0 })
   }, [selectionBox, shapes, isDragging, isResizing, isRotating, saveToHistory, setMultiSelection, selectShape])
 
   // Enhanced drawing function
