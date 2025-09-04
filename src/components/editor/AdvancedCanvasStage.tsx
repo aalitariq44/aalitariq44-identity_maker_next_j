@@ -12,6 +12,7 @@ interface AdvancedCanvasStageProps {
 
 export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width, height }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -31,9 +32,11 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
   const [multiSelection, setMultiSelection] = useState<string[]>([])
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
+  const [isMiddleMousePanning, setIsMiddleMousePanning] = useState(false)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
-  const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
+  const [documentPan, setDocumentPan] = useState({ x: 0, y: 0 })
   const [lastWheelTime, setLastWheelTime] = useState(0)
+  const [isPointerOverDocument, setIsPointerOverDocument] = useState(false)
 
   const {
     shapes,
@@ -75,14 +78,25 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
 
+    // Check if middle mouse button for panning document
+    if (e.buttons === 4 || isMiddleMousePanning) {
+      const deltaX = e.deltaX
+      const deltaY = e.deltaY
+      setDocumentPan(prev => ({
+        x: prev.x - deltaX,
+        y: prev.y - deltaY
+      }))
+      return
+    }
+
     // Zoom factor
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1
     const newZoom = Math.max(0.1, Math.min(5, canvasSettings.zoom * scaleFactor))
 
-    // Calculate zoom point for smooth zooming
+    // Calculate zoom point for smooth zooming around cursor
     const zoomPoint = {
-      x: (mouseX - canvasOffset.x) / canvasSettings.zoom,
-      y: (mouseY - canvasOffset.y) / canvasSettings.zoom
+      x: (mouseX - documentPan.x) / canvasSettings.zoom,
+      y: (mouseY - documentPan.y) / canvasSettings.zoom
     }
 
     const newOffset = {
@@ -91,20 +105,20 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
 
     setZoom(newZoom)
-    setCanvasOffset(newOffset)
-  }, [canvasSettings.zoom, canvasOffset, setZoom, lastWheelTime])
+    setDocumentPan(newOffset)
+  }, [canvasSettings.zoom, documentPan, setZoom, lastWheelTime, isMiddleMousePanning])
 
   // Reset view function
   const resetView = useCallback(() => {
     setZoom(1)
-    setCanvasOffset({ x: 0, y: 0 })
+    setDocumentPan({ x: 0, y: 0 })
   }, [setZoom])
 
   // Fit to screen function
   const fitToScreen = useCallback(() => {
-    if (!canvasRef.current) return
+    if (!containerRef.current) return
     
-    const containerRect = canvasRef.current.getBoundingClientRect()
+    const containerRect = containerRef.current.getBoundingClientRect()
     const containerWidth = containerRect.width - 40 // padding
     const containerHeight = containerRect.height - 40 // padding
     
@@ -116,7 +130,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     const offsetY = (containerHeight - canvasSettings.height * newZoom) / 2
     
     setZoom(newZoom)
-    setCanvasOffset({ x: offsetX, y: offsetY })
+    setDocumentPan({ x: offsetX, y: offsetY })
   }, [canvasSettings.width, canvasSettings.height, setZoom])
 
   // Enhanced keyboard event handlers
@@ -261,10 +275,10 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     // Don't select hidden or locked shapes
     if (!shape.visible || shape.locked) return false
 
-    // Apply canvas offset
+    // Apply document pan offset for accurate hit detection
     const adjustedPoint = {
-      x: point.x - canvasOffset.x,
-      y: point.y - canvasOffset.y
+      x: (point.x - documentPan.x) / canvasSettings.zoom,
+      y: (point.y - documentPan.y) / canvasSettings.zoom
     }
 
     switch (shape.type) {
@@ -294,7 +308,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
       default:
         return false
     }
-  }, [canvasOffset])
+  }, [documentPan, canvasSettings.zoom])
 
   // Enhanced resize handles
   const getResizeHandles = useCallback((shape: Shape) => {
@@ -424,7 +438,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }).map(shape => shape.id)
   }, [shapes])
 
-  // Enhanced mouse handlers
+  // Enhanced mouse handlers with middle mouse support
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return
 
@@ -432,10 +446,36 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
+    // Handle middle mouse button for panning
+    if (e.button === 1) {
+      e.preventDefault()
+      setIsMiddleMousePanning(true)
+      setPanOffset({ x, y })
+      return
+    }
+
     // Handle panning with space key
     if (isSpacePressed) {
       setIsPanning(true)
       setPanOffset({ x, y })
+      return
+    }
+
+    // Convert screen coordinates to document coordinates
+    const docX = (x - documentPan.x) / canvasSettings.zoom
+    const docY = (y - documentPan.y) / canvasSettings.zoom
+
+    // Check if we're clicking inside the document bounds
+    setIsPointerOverDocument(
+      docX >= 0 && docX <= canvasSettings.width &&
+      docY >= 0 && docY <= canvasSettings.height
+    )
+
+    // Only allow interactions if we're over the document
+    if (!isPointerOverDocument && !(docX >= 0 && docX <= canvasSettings.width && docY >= 0 && docY <= canvasSettings.height)) {
+      // Deselect if clicking outside document
+      selectShape(null)
+      setMultiSelection([])
       return
     }
 
@@ -502,7 +542,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
         selectShape(clickedShape.id)
         setMultiSelection([])
         setIsDragging(true)
-        setDragOffset({ x: x - clickedShape.position.x, y: y - clickedShape.position.y })
+        setDragOffset({ x: docX - clickedShape.position.x, y: docY - clickedShape.position.y })
         setInitialShapeState({
           position: { ...clickedShape.position },
           size: { ...clickedShape.size },
@@ -518,13 +558,15 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
       setMultiSelection([])
     }
 
-    // Start selection box
-    setSelectionBox({
-      start: { x, y },
-      end: { x, y },
-      active: true
-    })
-  }, [shapes, isPointInShape, selectShape, selectedShape, selectedShapeId, multiSelection, isSpacePressed, isPointInRotationHandle, getResizeHandleAtPoint])
+    // Start selection box (only if inside document)
+    if (docX >= 0 && docX <= canvasSettings.width && docY >= 0 && docY <= canvasSettings.height) {
+      setSelectionBox({
+        start: { x: docX, y: docY },
+        end: { x: docX, y: docY },
+        active: true
+      })
+    }
+  }, [shapes, isPointInShape, selectShape, selectedShape, selectedShapeId, multiSelection, isSpacePressed, isPointInRotationHandle, getResizeHandleAtPoint, documentPan, canvasSettings, isPointerOverDocument])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return
@@ -537,7 +579,19 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     if (isPanning && isSpacePressed) {
       const deltaX = x - panOffset.x
       const deltaY = y - panOffset.y
-      setCanvasOffset(prev => ({
+      setDocumentPan(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }))
+      setPanOffset({ x, y })
+      return
+    }
+
+    // Handle middle mouse button panning
+    if (isMiddleMousePanning) {
+      const deltaX = x - panOffset.x
+      const deltaY = y - panOffset.y
+      setDocumentPan(prev => ({
         x: prev.x + deltaX,
         y: prev.y + deltaY
       }))
@@ -547,9 +601,12 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
 
     // Handle selection box
     if (selectionBox?.active) {
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      
       setSelectionBox(prev => prev ? {
         ...prev,
-        end: { x, y }
+        end: { x: docX, y: docY }
       } : null)
       return
     }
@@ -561,10 +618,13 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     if (!shape) return
 
     if (isRotating) {
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      
       const centerX = initialShapeState.position.x + initialShapeState.size.width / 2
       const centerY = initialShapeState.position.y + initialShapeState.size.height / 2
 
-      const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI)
+      const angle = Math.atan2(docY - centerY, docX - centerX) * (180 / Math.PI)
       const newRotation = angle + 90
 
       updateShape(selectedShapeId, { rotation: newRotation })
@@ -572,6 +632,9 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
 
     if (isResizing && resizeHandle) {
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      
       const { position: initialPos, size: initialSize } = initialShapeState
       let newPosition = { ...initialPos }
       let newSize = { ...initialSize }
@@ -580,38 +643,38 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
 
       switch (resizeHandle) {
         case 'topLeft':
-          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - x))
-          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - y))
+          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - docX))
+          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - docY))
           newPosition.x = initialPos.x + (initialSize.width - newSize.width)
           newPosition.y = initialPos.y + (initialSize.height - newSize.height)
           break
         case 'topRight':
-          newSize.width = Math.max(minSize, x - initialPos.x)
-          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - y))
+          newSize.width = Math.max(minSize, docX - initialPos.x)
+          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - docY))
           newPosition.y = initialPos.y + (initialSize.height - newSize.height)
           break
         case 'bottomLeft':
-          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - x))
-          newSize.height = Math.max(minSize, y - initialPos.y)
+          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - docX))
+          newSize.height = Math.max(minSize, docY - initialPos.y)
           newPosition.x = initialPos.x + (initialSize.width - newSize.width)
           break
         case 'bottomRight':
-          newSize.width = Math.max(minSize, x - initialPos.x)
-          newSize.height = Math.max(minSize, y - initialPos.y)
+          newSize.width = Math.max(minSize, docX - initialPos.x)
+          newSize.height = Math.max(minSize, docY - initialPos.y)
           break
         case 'top':
-          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - y))
+          newSize.height = Math.max(minSize, initialSize.height + (initialPos.y - docY))
           newPosition.y = initialPos.y + (initialSize.height - newSize.height)
           break
         case 'bottom':
-          newSize.height = Math.max(minSize, y - initialPos.y)
+          newSize.height = Math.max(minSize, docY - initialPos.y)
           break
         case 'left':
-          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - x))
+          newSize.width = Math.max(minSize, initialSize.width + (initialPos.x - docX))
           newPosition.x = initialPos.x + (initialSize.width - newSize.width)
           break
         case 'right':
-          newSize.width = Math.max(minSize, x - initialPos.x)
+          newSize.width = Math.max(minSize, docX - initialPos.x)
           break
       }
 
@@ -628,8 +691,11 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
 
     if (isDragging) {
-      let newX = x - dragOffset.x
-      let newY = y - dragOffset.y
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      
+      let newX = docX - dragOffset.x
+      let newY = docY - dragOffset.y
 
       if (canvasSettings.snapToGrid) {
         newX = snapToGrid(newX, canvasSettings.gridSize)
@@ -640,7 +706,13 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
   }, [isDragging, selectedShapeId, shapes, dragOffset, canvasSettings.snapToGrid, canvasSettings.gridSize, moveShape, isResizing, isRotating, resizeHandle, initialShapeState, updateShape, resizeShape, selectionBox, isPanning, isSpacePressed, panOffset])
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e?: React.MouseEvent) => {
+    // Handle middle mouse button release
+    if (e?.button === 1) {
+      setIsMiddleMousePanning(false)
+      return
+    }
+
     // Handle selection box completion
     if (selectionBox?.active) {
       const selectedIds = getShapesInSelectionBox(selectionBox)
@@ -662,6 +734,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     setIsResizing(false)
     setIsRotating(false)
     setIsPanning(false)
+    setIsMiddleMousePanning(false)
     setResizeHandle(null)
     setInitialShapeState(null)
   }, [selectionBox, getShapesInSelectionBox, setMultiSelection, selectShape, isDragging, isResizing, isRotating, saveToHistory])
@@ -777,12 +850,21 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
   // Get cursor type based on context
   const getCursorType = useCallback((e: React.MouseEvent) => {
     if (isSpacePressed) return 'grab'
-    if (isPanning) return 'grabbing'
+    if (isPanning || isMiddleMousePanning) return 'grabbing'
     if (!canvasRef.current || !selectedShape) return 'default'
 
     const rect = canvasRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
+
+    // Convert to document coordinates
+    const docX = (x - documentPan.x) / canvasSettings.zoom
+    const docY = (y - documentPan.y) / canvasSettings.zoom
+
+    // Check if we're over the document
+    if (docX < 0 || docX > canvasSettings.width || docY < 0 || docY > canvasSettings.height) {
+      return 'default'
+    }
 
     if (isPointInRotationHandle({ x, y }, selectedShape)) {
       return 'crosshair'
@@ -799,7 +881,7 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     }
 
     return 'default'
-  }, [selectedShape, isSpacePressed, isPanning, isPointInRotationHandle, getResizeHandleAtPoint, getResizeHandles, isPointInShape])
+  }, [selectedShape, isSpacePressed, isPanning, isMiddleMousePanning, isPointInRotationHandle, getResizeHandleAtPoint, getResizeHandles, isPointInShape, documentPan, canvasSettings])
 
   // Main render effect
   useEffect(() => {
@@ -812,12 +894,17 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
     
     // Apply canvas transformations
     context.save()
-    context.translate(canvasOffset.x, canvasOffset.y)
+    context.translate(documentPan.x, documentPan.y)
     context.scale(canvasSettings.zoom, canvasSettings.zoom)
     
-    // Draw background
+    // Draw background color for the document only
     context.fillStyle = canvasSettings.backgroundColor
     context.fillRect(0, 0, canvasSettings.width, canvasSettings.height)
+    
+    // Draw border around the document
+    context.strokeStyle = '#333'
+    context.lineWidth = 2 / canvasSettings.zoom
+    context.strokeRect(0, 0, canvasSettings.width, canvasSettings.height)
     
     // Draw grid if enabled
     if (canvasSettings.showGrid) {
@@ -1165,78 +1252,125 @@ export const AdvancedCanvasStage: React.FC<AdvancedCanvasStageProps> = ({ width,
       drawSelectionBox(context, selectionBox)
     }
 
-  }, [context, shapes, canvasSettings, selectedShape, multiSelection, selectionBox, canvasOffset, drawSelection, drawMultiSelection, drawSelectionBox])
+  }, [context, shapes, canvasSettings, selectedShape, multiSelection, selectionBox, documentPan, drawSelection, drawMultiSelection, drawSelectionBox])
 
   return (
     <div 
-      className="canvas-container border border-gray-300 bg-gray-100 shadow-lg overflow-hidden flex items-center justify-center relative"
-      style={{ width, height }}
+      ref={containerRef}
+      className="canvas-container bg-gray-200 shadow-lg overflow-hidden relative flex-1"
+      style={{ width: '100%', height: '100%' }}
     >
+      {/* Identity Card Border - Visual separation */}
+      <div 
+        className="absolute border-2 border-gray-800 bg-white shadow-xl pointer-events-none"
+        style={{
+          left: documentPan.x,
+          top: documentPan.y,
+          width: canvasSettings.width * canvasSettings.zoom,
+          height: canvasSettings.height * canvasSettings.zoom,
+          transform: 'translate3d(0,0,0)', // Force GPU acceleration
+        }}
+      />
+      
       <canvas
         ref={canvasRef}
-        width={Math.max(canvasSettings.width * canvasSettings.zoom + Math.abs(canvasOffset.x) * 2, width)}
-        height={Math.max(canvasSettings.height * canvasSettings.zoom + Math.abs(canvasOffset.y) * 2, height)}
+        width={containerRef.current?.clientWidth || width}
+        height={containerRef.current?.clientHeight || height}
         style={{
-          border: '2px solid #333',
-          backgroundColor: canvasSettings.backgroundColor,
+          backgroundColor: '#f5f5f5', // Canvas background (not document background)
           cursor: getCursorType({} as React.MouseEvent),
-          maxWidth: 'none',
-          maxHeight: 'none'
+          width: '100%',
+          height: '100%',
+          display: 'block'
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onContextMenu={(e) => e.preventDefault()} // Prevent right-click menu
         tabIndex={0}
       />
       
       {/* Canvas Info Overlay */}
-      <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-        Zoom: {Math.round(canvasSettings.zoom * 100)}% | 
-        {multiSelection.length > 0 ? ` Selected: ${multiSelection.length}` : selectedShape ? ' Selected: 1' : ' No selection'} |
-        {isSpacePressed ? ' Pan Mode' : ''}
+      <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded text-sm font-mono shadow-lg">
+        <div>Zoom: {Math.round(canvasSettings.zoom * 100)}%</div>
+        <div>
+          {multiSelection.length > 0 
+            ? `Selected: ${multiSelection.length} objects` 
+            : selectedShape 
+              ? 'Selected: 1 object' 
+              : 'No selection'
+          }
+        </div>
+        <div className="text-gray-300">
+          {isSpacePressed && 'Space: Pan Mode'}
+          {isMiddleMousePanning && 'Middle Mouse: Panning'}
+        </div>
       </div>
       
-      {/* Zoom Controls */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1">
+      {/* Document Info */}
+      <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 text-gray-800 px-3 py-2 rounded text-sm shadow-lg border">
+        <div>Document: {canvasSettings.width}×{canvasSettings.height}px</div>
+        <div>Position: {Math.round(documentPan.x)}, {Math.round(documentPan.y)}</div>
+      </div>
+      
+      {/* Enhanced Zoom Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
         <button
           onClick={() => setZoom(Math.min(5, canvasSettings.zoom * 1.2))}
-          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
-          title="تكبير (Ctrl + +)"
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded-lg p-3 shadow-lg transition-all hover:shadow-xl"
+          title="Zoom In (Ctrl/Cmd + +)"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
+        
         <button
           onClick={() => setZoom(Math.max(0.1, canvasSettings.zoom * 0.8))}
-          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
-          title="تصغير (Ctrl + -)"
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded-lg p-3 shadow-lg transition-all hover:shadow-xl"
+          title="Zoom Out (Ctrl/Cmd + -)"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
           </svg>
         </button>
+        
         <button
           onClick={resetView}
-          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
-          title="إعادة تعيين العرض (Ctrl + 0)"
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded-lg p-3 shadow-lg transition-all hover:shadow-xl"
+          title="Reset View (Ctrl/Cmd + 0)"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
+        
         <button
           onClick={fitToScreen}
-          className="bg-white hover:bg-gray-100 border border-gray-300 rounded p-2 shadow-sm transition-colors"
-          title="ملائمة للشاشة (Ctrl + 9)"
+          className="bg-white hover:bg-gray-100 border border-gray-300 rounded-lg p-3 shadow-lg transition-all hover:shadow-xl"
+          title="Fit to Screen (Ctrl/Cmd + 9)"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
           </svg>
         </button>
       </div>
+
+      {/* Keyboard Shortcuts Help */}
+      {isSpacePressed && (
+        <div className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg">
+          <div className="text-sm font-semibold mb-2">Navigation Controls:</div>
+          <div className="text-xs space-y-1">
+            <div>• Space + Drag: Pan around</div>
+            <div>• Middle Mouse + Drag: Pan document</div>
+            <div>• Scroll Wheel: Zoom in/out</div>
+            <div>• Ctrl/Cmd + 0: Reset view</div>
+            <div>• Ctrl/Cmd + 9: Fit to screen</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

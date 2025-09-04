@@ -21,7 +21,7 @@ import { ArrowLeft, Settings, Download, Save, FolderOpen, RotateCcw, Layers, Gri
 import Link from 'next/link'
 
 // Dynamic imports for client-side components
-const AdvancedCanvasStage = dynamic(() => import('@/components/editor/AdvancedCanvasStage'), { ssr: false })
+const EnhancedCanvasStage = dynamic(() => import('@/components/editor/EnhancedCanvasStage'), { ssr: false })
 const AdvancedToolbar = dynamic(() => import('@/components/editor/AdvancedToolbar'), { ssr: false })
 const AdvancedLayersPanel = dynamic(() => import('@/components/editor/AdvancedLayersPanel'), { ssr: false })
 const AdvancedPropertiesPanel = dynamic(() => import('@/components/editor/AdvancedPropertiesPanel'), { ssr: false })
@@ -197,13 +197,10 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Canvas Area */}
-        <div className="flex-1 flex items-center justify-center p-8 overflow-auto bg-gray-100">
-          <div ref={canvasRef} className="flex items-center justify-center">
-            <AdvancedCanvasStage
-              width={Math.min(canvasSettings.width, 800)}
-              height={Math.min(canvasSettings.height, 600)}
-            />
+        {/* Canvas Area - Full Width */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div ref={canvasRef} className="flex-1">
+            <EnhancedCanvasStage />
           </div>
         </div>
 
@@ -258,19 +255,33 @@ export default function EditorPage() {
         onClose={() => setShowTemplateLibrary(false)}
       />
 
-      {/* Status Bar */}
-      <div className="bg-white border-t border-gray-200 px-6 py-2">
+      {/* Status Bar - Enhanced */}
+      <div className="bg-white border-t border-gray-200 px-6 py-3">
         <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-4">
-            <span>الحجم: {canvasSettings.width}×{canvasSettings.height} بكسل</span>
-            <span>التكبير: {Math.round(canvasSettings.zoom * 100)}%</span>
+          <div className="flex items-center gap-6">
+            <span className="font-medium">
+              Document: {canvasSettings.width}×{canvasSettings.height}px
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              Zoom: {Math.round(canvasSettings.zoom * 100)}%
+            </span>
             <span className={`flex items-center gap-1 ${canvasSettings.showGrid ? 'text-blue-600' : ''}`}>
               <Grid className="w-4 h-4" />
-              {canvasSettings.showGrid ? 'الشبكة مُفعلة' : 'الشبكة مُعطلة'}
+              Grid {canvasSettings.showGrid ? 'ON' : 'OFF'}
+            </span>
+            <span className={`flex items-center gap-1 ${canvasSettings.snapToGrid ? 'text-purple-600' : ''}`}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12L8 10l2-2 2 2-2 2zM8 8L6 6l2-2 2 2-2 2zm4 0l2-2 2 2-2 2-2-2zm-4 4l-2 2 2 2 2-2-2-2zm4 0l2 2 2 2 2-2-2-2z"/>
+              </svg>
+              Snap {canvasSettings.snapToGrid ? 'ON' : 'OFF'}
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span>جاهز للتصميم</span>
+            <span className="text-green-600 font-medium">Ready for Design</span>
+            <span className="text-xs text-gray-400">
+              Tip: Middle mouse to pan, Space+drag to move around
+            </span>
           </div>
         </div>
       </div>
