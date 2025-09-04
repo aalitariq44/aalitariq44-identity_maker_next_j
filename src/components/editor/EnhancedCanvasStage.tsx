@@ -482,13 +482,13 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     
     // Draw document border
     context.strokeStyle = '#333'
-    context.lineWidth = 2 / canvasSettings.zoom
+    context.lineWidth = 2
     context.strokeRect(0, 0, canvasSettings.width, canvasSettings.height)
     
     // Draw grid if enabled
     if (canvasSettings.showGrid) {
       context.strokeStyle = canvasSettings.gridColor || '#e5e7eb'
-      context.lineWidth = 0.5 / canvasSettings.zoom
+      context.lineWidth = 0.5
       context.globalAlpha = 0.5
 
       for (let x = 0; x <= canvasSettings.width; x += canvasSettings.gridSize) {
@@ -565,7 +565,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           context.fillStyle = triangleShape.fill
           context.fill()
           context.strokeStyle = triangleShape.stroke
-          context.lineWidth = triangleShape.strokeWidth / canvasSettings.zoom
+          context.lineWidth = triangleShape.strokeWidth
           if (triangleShape.strokeWidth > 0) {
             context.stroke()
           }
@@ -646,7 +646,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       
       context.strokeStyle = '#0ea5e9'
       context.fillStyle = 'rgba(14, 165, 233, 0.1)'
-      context.lineWidth = 1 / canvasSettings.zoom
+      context.lineWidth = 1
       context.setLineDash([3, 3])
 
       const width = selectionBox.end.x - selectionBox.start.x
