@@ -9,13 +9,20 @@ import { CreditCard, Palette, Download, FileText, Sparkles, ArrowLeft } from 'lu
 export default function HomePage() {
   const router = useRouter()
 
-  // Temporary redirect for development - remove this when done
+  // Redirect to organization setup for authenticated users
   useEffect(() => {
-    const hasVisited = localStorage.getItem('hasVisitedHome')
-    if (!hasVisited) {
-      localStorage.setItem('hasVisitedHome', 'true')
-      router.push('/editor')
+    // Check if user is logged in and redirect accordingly
+    const checkAuth = () => {
+      const user = localStorage.getItem('user')
+      if (user) {
+        // User is logged in, redirect to organization setup
+        router.push('/organization/setup')
+      }
     }
+    
+    // Small delay to ensure auth state is loaded
+    const timer = setTimeout(checkAuth, 100)
+    return () => clearTimeout(timer)
   }, [router])
 
   return (
@@ -33,30 +40,33 @@ export default function HomePage() {
           </div>
           
           <h2 className="text-5xl font-bold text-gray-800 mb-6 leading-tight">
-            صمم هويتك بسهولة
+            نظام إدارة هويات المؤسسات
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              واحترافية
+              والفرق بسهولة
             </span>
           </h2>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            أداة تصميم متقدمة لإنشاء بطاقات الهوية والبطاقات التعريفية بتقنيات حديثة.
-            صمم، عدّل، وصدّر بطاقاتك بصيغ مختلفة بكل سهولة.
+            منصة متكاملة لإدارة المؤسسات وإنشاء هويات الطلاب والموظفين.
+            أضف أعضاء فريقك، اختر قوالب جاهزة أو صمم قوالب مخصصة، وصدّر هويات للفريق كاملاً دفعة واحدة.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/editor"
+              href="/auth"
               className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3 hover:scale-105"
             >
-              ابدأ التصميم الآن
+              ابدأ إنشاء هويات مؤسستك
               <ArrowLeft className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             
-            <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-300">
-              شاهد الأمثلة
-            </button>
+            <Link
+              href="/editor"
+              className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+            >
+              جرب المحرر مجاناً
+            </Link>
           </div>
         </div>
 

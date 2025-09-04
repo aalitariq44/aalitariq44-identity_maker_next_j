@@ -83,12 +83,21 @@ const Navbar: React.FC<NavbarProps> = ({
                 </button>
                 
                 {user && (
-                  <button
-                    onClick={() => router.push('/my-designs')}
-                    className="text-gray-700 hover:text-blue-600 transition duration-200"
-                  >
-                    تصاميمي
-                  </button>
+                  <>
+                    <button
+                      onClick={() => router.push('/organization/setup')}
+                      className="text-gray-700 hover:text-blue-600 transition duration-200"
+                    >
+                      إدارة المؤسسات
+                    </button>
+                    
+                    <button
+                      onClick={() => router.push('/my-designs')}
+                      className="text-gray-700 hover:text-blue-600 transition duration-200"
+                    >
+                      تصاميمي
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -141,6 +150,16 @@ const Navbar: React.FC<NavbarProps> = ({
                         </p>
                         <p className="text-sm text-gray-600">{user.email}</p>
                       </div>
+                      
+                      <button
+                        onClick={() => {
+                          router.push('/organization/setup');
+                          setShowUserMenu(false);
+                        }}
+                        className="block w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        إدارة المؤسسات
+                      </button>
                       
                       <button
                         onClick={() => {
@@ -221,15 +240,27 @@ const Navbar: React.FC<NavbarProps> = ({
                 </button>
                 
                 {user && (
-                  <button
-                    onClick={() => {
-                      router.push('/my-designs');
-                      setShowMobileMenu(false);
-                    }}
-                    className="block w-full text-right px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                  >
-                    تصاميمي
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        router.push('/organization/setup');
+                        setShowMobileMenu(false);
+                      }}
+                      className="block w-full text-right px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                    >
+                      إدارة المؤسسات
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        router.push('/my-designs');
+                        setShowMobileMenu(false);
+                      }}
+                      className="block w-full text-right px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                    >
+                      تصاميمي
+                    </button>
+                  </>
                 )}
               </div>
             </div>
