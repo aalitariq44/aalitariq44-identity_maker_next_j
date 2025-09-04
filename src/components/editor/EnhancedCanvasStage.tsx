@@ -744,8 +744,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           
         case 'circle':
           const circleShape = shape as any
-          const radius = Math.min(shape.size.width, shape.size.height) / 2
-          circleShape.radius = radius
+          const radius = circleShape.radius
           context.beginPath()
           context.arc(0, 0, radius, 0, 2 * Math.PI)
             context.fillStyle = circleShape.fill

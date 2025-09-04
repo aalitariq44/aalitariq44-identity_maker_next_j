@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { Shape, EditorState, CanvasSettings } from '@/types/shapes'
+import type { Shape, EditorState, CanvasSettings, CircleShape } from '@/types/shapes'
 import { nanoid } from 'nanoid'
 import { calculateTextDimensions } from '@/lib/konvaUtils'
 
@@ -158,6 +158,16 @@ export const useEditorStore = create<EditorStore>()(
               )
               state.shapes[shapeIndex].size = dimensions
             }
+            
+            // If this is a circle and radius changed, update the size
+            if (shape.type === 'circle' && 'radius' in updates) {
+              const circleShape = state.shapes[shapeIndex] as CircleShape
+              const newRadius = updates.radius as number
+              state.shapes[shapeIndex].size = {
+                width: newRadius * 2,
+                height: newRadius * 2,
+              }
+            }
           }
         })
       },
@@ -213,6 +223,10 @@ export const useEditorStore = create<EditorStore>()(
           const shape = state.shapes.find((s) => s.id === id)
           if (shape) {
             shape.size = size
+            // If this is a circle, also update the radius
+            if (shape.type === 'circle') {
+              (shape as CircleShape).radius = Math.min(size.width, size.height) / 2
+            }
           }
         })
       },
