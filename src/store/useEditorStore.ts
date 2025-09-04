@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { Shape, EditorState, CanvasSettings, CircleShape } from '@/types/shapes'
+import type { Shape, EditorState, CanvasSettings, CircleShape, CardSide } from '@/types/shapes'
 import { nanoid } from 'nanoid'
 import { calculateTextDimensions } from '@/lib/konvaUtils'
 
@@ -26,6 +26,11 @@ interface EditorStore extends EditorState {
   removeBackgroundImage: () => void
   setBackgroundPattern: (pattern: string) => void
   removeBackgroundPattern: () => void
+  
+  // Card sides actions
+  switchToSide: (side: 'front' | 'back') => void
+  getCurrentSideData: () => CardSide
+  syncCurrentSideData: () => void
   
   // History actions
   undo: () => void
@@ -76,6 +81,12 @@ const initialCanvasSettings: CanvasSettings = {
   gridType: 'lines',
 }
 
+const createInitialCardSide = (name: string): CardSide => ({
+  name,
+  shapes: [],
+  canvasSettings: { ...initialCanvasSettings }
+})
+
 export const useEditorStore = create<EditorStore>()(
   subscribeWithSelector(
     immer((set, get) => ({
@@ -88,6 +99,11 @@ export const useEditorStore = create<EditorStore>()(
         future: [],
       },
       clipboard: [],
+      
+      // Card sides support
+      currentSide: 'front' as 'front' | 'back',
+      frontSide: createInitialCardSide('الوجه الأمامي'),
+      backSide: createInitialCardSide('الوجه الخلفي'),
 
       addShape: (shapeData: Omit<Shape, 'id'>) => {
         set((state) => {
@@ -305,6 +321,64 @@ export const useEditorStore = create<EditorStore>()(
         })
       },
 
+      // Card sides actions
+      switchToSide: (side: 'front' | 'back') => {
+        set((state) => {
+          // Save current side data before switching
+          const currentSideData = {
+            name: state.currentSide === 'front' ? state.frontSide.name : state.backSide.name,
+            shapes: [...state.shapes],
+            canvasSettings: { ...state.canvasSettings }
+          }
+          
+          if (state.currentSide === 'front') {
+            state.frontSide = currentSideData
+          } else {
+            state.backSide = currentSideData
+          }
+          
+          // Switch to the new side
+          state.currentSide = side
+          const newSideData = side === 'front' ? state.frontSide : state.backSide
+          
+          state.shapes = [...newSideData.shapes]
+          state.canvasSettings = { ...newSideData.canvasSettings }
+          state.selectedShapeId = null
+          
+          // Clear history when switching sides
+          state.history = {
+            past: [],
+            present: [],
+            future: [],
+          }
+        })
+      },
+      
+      getCurrentSideData: (): CardSide => {
+        const state = get()
+        return {
+          name: state.currentSide === 'front' ? 'الوجه الأمامي' : 'الوجه الخلفي',
+          shapes: [...state.shapes],
+          canvasSettings: { ...state.canvasSettings }
+        }
+      },
+      
+      syncCurrentSideData: () => {
+        set((state) => {
+          const currentSideData = {
+            name: state.currentSide === 'front' ? 'الوجه الأمامي' : 'الوجه الخلفي',
+            shapes: [...state.shapes],
+            canvasSettings: { ...state.canvasSettings }
+          }
+          
+          if (state.currentSide === 'front') {
+            state.frontSide = currentSideData
+          } else {
+            state.backSide = currentSideData
+          }
+        })
+      },
+
       undo: () => {
         set((state) => {
           if (state.history.past.length > 0) {
@@ -340,10 +414,15 @@ export const useEditorStore = create<EditorStore>()(
 
       saveProject: () => {
         const state = get()
+        
+        // Sync current side data before saving
+        state.syncCurrentSideData()
+        
         const projectData = {
-          shapes: state.shapes,
-          canvasSettings: state.canvasSettings,
-          version: '1.0',
+          frontSide: state.frontSide,
+          backSide: state.backSide,
+          currentSide: state.currentSide,
+          version: '2.0', // Updated version to support dual sides
           createdAt: new Date().toISOString(),
         }
         return JSON.stringify(projectData, null, 2)
@@ -353,25 +432,82 @@ export const useEditorStore = create<EditorStore>()(
         try {
           const projectData = JSON.parse(jsonData)
           set((state) => {
-            state.shapes = projectData.shapes || []
-            
-            // Recalculate text dimensions for all text shapes
-            state.shapes.forEach(shape => {
-              if (shape.type === 'text') {
-                const textShape = shape as { text: string; fontSize: number; fontFamily: string } & typeof shape
-                const dimensions = calculateTextDimensions(
-                  textShape.text,
-                  textShape.fontSize,
-                  textShape.fontFamily
-                )
-                shape.size = dimensions
+            // Check if this is a new dual-side project (version 2.0+) or legacy single-side project
+            if (projectData.version >= '2.0' && projectData.frontSide && projectData.backSide) {
+              // New dual-side format
+              state.frontSide = {
+                ...projectData.frontSide,
+                shapes: projectData.frontSide.shapes.map((shape: Shape) => {
+                  if (shape.type === 'text') {
+                    const textShape = shape as { text: string; fontSize: number; fontFamily: string } & typeof shape
+                    const dimensions = calculateTextDimensions(
+                      textShape.text,
+                      textShape.fontSize,
+                      textShape.fontFamily
+                    )
+                    return { ...shape, size: dimensions }
+                  }
+                  return shape
+                })
               }
-            })
-            
-            state.canvasSettings = {
-              ...initialCanvasSettings,
-              ...projectData.canvasSettings,
+              
+              state.backSide = {
+                ...projectData.backSide,
+                shapes: projectData.backSide.shapes.map((shape: Shape) => {
+                  if (shape.type === 'text') {
+                    const textShape = shape as { text: string; fontSize: number; fontFamily: string } & typeof shape
+                    const dimensions = calculateTextDimensions(
+                      textShape.text,
+                      textShape.fontSize,
+                      textShape.fontFamily
+                    )
+                    return { ...shape, size: dimensions }
+                  }
+                  return shape
+                })
+              }
+              
+              state.currentSide = projectData.currentSide || 'front'
+              
+              // Load the current side data
+              const currentSideData = state.currentSide === 'front' ? state.frontSide : state.backSide
+              state.shapes = [...currentSideData.shapes]
+              state.canvasSettings = { ...currentSideData.canvasSettings }
+              
+            } else {
+              // Legacy single-side format - load as front side only
+              const shapes = projectData.shapes || []
+              
+              // Recalculate text dimensions for all text shapes
+              const processedShapes = shapes.map((shape: Shape) => {
+                if (shape.type === 'text') {
+                  const textShape = shape as { text: string; fontSize: number; fontFamily: string } & typeof shape
+                  const dimensions = calculateTextDimensions(
+                    textShape.text,
+                    textShape.fontSize,
+                    textShape.fontFamily
+                  )
+                  return { ...shape, size: dimensions }
+                }
+                return shape
+              })
+              
+              state.frontSide = {
+                name: 'الوجه الأمامي',
+                shapes: processedShapes,
+                canvasSettings: {
+                  ...initialCanvasSettings,
+                  ...projectData.canvasSettings,
+                }
+              }
+              
+              state.backSide = createInitialCardSide('الوجه الخلفي')
+              state.currentSide = 'front'
+              
+              state.shapes = [...processedShapes]
+              state.canvasSettings = { ...state.frontSide.canvasSettings }
             }
+            
             state.selectedShapeId = null
             state.history = {
               past: [],

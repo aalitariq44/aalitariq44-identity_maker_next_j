@@ -7,7 +7,7 @@ import { useEditorStore } from '@/store/useEditorStore'
 interface ExportModalProps {
   isOpen: boolean
   onClose: () => void
-  onExport: (format: 'png' | 'jpg' | 'pdf') => Promise<void>
+  onExport: (format: 'png' | 'jpg' | 'pdf', options?: { sides: 'current' | 'both' }) => Promise<void>
   isExporting: boolean
 }
 
@@ -18,7 +18,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   isExporting,
 }) => {
   const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpg' | 'pdf'>('png')
-  const { canvasSettings, toggleOrientation } = useEditorStore()
+  const [exportSides, setExportSides] = useState<'current' | 'both'>('current')
+  const { canvasSettings, toggleOrientation, currentSide, frontSide, backSide } = useEditorStore()
 
   if (!isOpen) return null
 
@@ -68,7 +69,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   }
 
   const handleExport = async () => {
-    await onExport(selectedFormat)
+    await onExport(selectedFormat, { sides: exportSides })
   }
 
   return (
@@ -150,7 +151,45 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
 
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
+            {/* Export Sides Selection */}
+            <div className="mb-4">
+              <h4 className="font-medium text-gray-900 mb-3">اختر الوجه المراد تصديره:</h4>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="current"
+                    checked={exportSides === 'current'}
+                    onChange={(e) => setExportSides(e.target.value as 'current' | 'both')}
+                    className="text-blue-600"
+                  />
+                  <div>
+                    <div className="font-medium">الوجه الحالي فقط</div>
+                    <div className="text-sm text-gray-600">
+                      تصدير {currentSide === 'front' ? frontSide.name : backSide.name} فقط
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="both"
+                    checked={exportSides === 'both'}
+                    onChange={(e) => setExportSides(e.target.value as 'current' | 'both')}
+                    className="text-blue-600"
+                  />
+                  <div>
+                    <div className="font-medium">كلا الوجهين</div>
+                    <div className="text-sm text-gray-600">
+                      تصدير الوجه الأمامي والخلفي في ملفين منفصلين
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Eye className="w-5 h-5" />
                 <div>
@@ -159,6 +198,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     <li>استخدم PNG للطباعة عالية الجودة</li>
                     <li>استخدم JPG للمشاركة السريعة</li>
                     <li>استخدم PDF للطباعة الاحترافية</li>
+                    {exportSides === 'both' && <li>سيتم إنشاء ملفين منفصلين للوجهين</li>}
                   </ul>
                 </div>
               </div>
@@ -199,7 +239,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                تصدير {selectedFormat.toUpperCase()}
+                تصدير {selectedFormat.toUpperCase()} 
+                {exportSides === 'both' && ' (الوجهين)'}
               </>
             )}
           </button>

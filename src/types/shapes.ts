@@ -138,6 +138,12 @@ export interface CanvasSettings {
   gridType: 'lines' | 'dots' | 'crosses' | 'diagonal'
 }
 
+export interface CardSide {
+  name: string
+  shapes: Shape[]
+  canvasSettings: CanvasSettings
+}
+
 export interface EditorState {
   shapes: Shape[]
   selectedShapeId: string | null
@@ -148,6 +154,10 @@ export interface EditorState {
     future: Shape[][]
   }
   clipboard: Shape[]
+  // Card sides support
+  currentSide: 'front' | 'back'
+  frontSide: CardSide
+  backSide: CardSide
 }
 
 export interface CardSize {

@@ -17,6 +17,9 @@ import AlignmentTools from '@/components/editor/AlignmentTools'
 import AutoSaveManager from '@/components/editor/AutoSaveManager'
 import SaveDesignModal from '@/components/editor/SaveDesignModal'
 import LoadDesignModal from '@/components/editor/LoadDesignModal'
+import CardSideSwitcher from '@/components/editor/CardSideSwitcher'
+import QuickSideSwitcher from '@/components/editor/QuickSideSwitcher'
+import CardPreviewPanel from '@/components/editor/CardPreviewPanel'
 import { ShortcutsButton } from '@/components/editor/KeyboardShortcuts'
 import { 
   exportCanvasAsImage, 
@@ -59,6 +62,9 @@ export default function EditorPage() {
     saveProject,
     loadProject,
     updateCanvasSettings,
+    currentSide,
+    switchToSide,
+    syncCurrentSideData,
   } = useEditorStore()
 
   // تحميل التصميم إذا تم تمرير معرف في URL
@@ -75,6 +81,13 @@ export default function EditorPage() {
       router.push('/auth')
     }
   }, [authLoading, user, router])
+
+  // Sync current side data when component unmounts or side changes
+  useEffect(() => {
+    return () => {
+      syncCurrentSideData()
+    }
+  }, [currentSide, syncCurrentSideData])
 
   const loadDesignFromFirebase = async (designId: string) => {
     setLoading(true)
@@ -93,7 +106,7 @@ export default function EditorPage() {
     setLoading(false)
   }
 
-  const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
+  const handleExport = async (format: 'png' | 'jpg' | 'pdf', options?: { sides: 'current' | 'both' }) => {
     if (!canvasRef.current) return
 
     setIsExporting(true)
@@ -101,17 +114,72 @@ export default function EditorPage() {
       const canvasElement = canvasRef.current.querySelector('.canvas-container')
       if (!canvasElement) throw new Error('Canvas not found')
 
-      if (format === 'pdf') {
-        await exportCanvasAsPDF(canvasElement as HTMLElement, {
-          orientation: canvasSettings.orientation,
-          format: 'credit-card',
-        })
+      if (options?.sides === 'both') {
+        // Export both sides
+        const originalSide = currentSide
+        
+        // Export front side
+        if (originalSide !== 'front') {
+          switchToSide('front')
+          // Wait for the canvas to update
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+        
+        if (format === 'pdf') {
+          await exportCanvasAsPDF(canvasElement as HTMLElement, {
+            orientation: canvasSettings.orientation,
+            format: 'credit-card',
+            filename: 'identity-card-front'
+          })
+        } else {
+          await exportCanvasAsImage(canvasElement as HTMLElement, {
+            format,
+            quality: 1,
+            scale: 2,
+            filename: 'identity-card-front'
+          })
+        }
+        
+        // Export back side
+        switchToSide('back')
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        if (format === 'pdf') {
+          await exportCanvasAsPDF(canvasElement as HTMLElement, {
+            orientation: canvasSettings.orientation,
+            format: 'credit-card',
+            filename: 'identity-card-back'
+          })
+        } else {
+          await exportCanvasAsImage(canvasElement as HTMLElement, {
+            format,
+            quality: 1,
+            scale: 2,
+            filename: 'identity-card-back'
+          })
+        }
+        
+        // Return to original side
+        switchToSide(originalSide)
+        
       } else {
-        await exportCanvasAsImage(canvasElement as HTMLElement, {
-          format,
-          quality: 1,
-          scale: 2,
-        })
+        // Export current side only
+        const sideName = currentSide === 'front' ? 'front' : 'back'
+        
+        if (format === 'pdf') {
+          await exportCanvasAsPDF(canvasElement as HTMLElement, {
+            orientation: canvasSettings.orientation,
+            format: 'credit-card',
+            filename: `identity-card-${sideName}`
+          })
+        } else {
+          await exportCanvasAsImage(canvasElement as HTMLElement, {
+            format,
+            quality: 1,
+            scale: 2,
+            filename: `identity-card-${sideName}`
+          })
+        }
       }
     } catch (error) {
       console.error('Export failed:', error)
@@ -230,6 +298,11 @@ export default function EditorPage() {
 
           <div className="w-px h-6 bg-gray-300" />
 
+          {/* Quick Side Switcher */}
+          <QuickSideSwitcher />
+
+          <div className="w-px h-6 bg-gray-300" />
+
           <div className="flex items-center gap-2 mr-4">
             <span className="text-sm text-gray-600">
               الاتجاه: {canvasSettings.orientation === 'landscape' ? 'أفقي' : 'عمودي'}
@@ -269,7 +342,15 @@ export default function EditorPage() {
               خصائص العنصر
             </h3>
           </div>
-          <AdvancedPropertiesPanel className="h-full" />
+          <div className="h-full overflow-y-auto">
+            {/* Card Side Switcher */}
+            <div className="p-4 border-b border-gray-200">
+              <CardSideSwitcher />
+            </div>
+            
+            {/* Properties Panel */}
+            <AdvancedPropertiesPanel className="flex-1" />
+          </div>
         </div>
 
         {/* Left Sidebar - Alignment Tools */}
@@ -294,7 +375,17 @@ export default function EditorPage() {
 
         {/* Right Panel - Layers */}
         <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
-          <AdvancedLayersPanel className="h-full" />
+          <div className="h-full flex flex-col">
+            {/* Card Preview Panel */}
+            <div className="p-4 border-b border-gray-200">
+              <CardPreviewPanel />
+            </div>
+            
+            {/* Layers Panel */}
+            <div className="flex-1">
+              <AdvancedLayersPanel className="h-full" />
+            </div>
+          </div>
         </div>
       </div>
 
