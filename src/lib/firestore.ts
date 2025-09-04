@@ -43,7 +43,12 @@ export const saveDesign = async (designData: Omit<Design, 'id' | 'userId' | 'cre
       updatedAt: serverTimestamp() as Timestamp,
     };
 
-    const docRef = await addDoc(collection(db, 'designs'), design);
+    // إزالة الحقول غير المعرفة قبل الحفظ
+    const cleanDesign = Object.fromEntries(
+      Object.entries(design).filter(([_, value]) => value !== undefined)
+    );
+
+    const docRef = await addDoc(collection(db, 'designs'), cleanDesign);
     return { id: docRef.id, error: null };
   } catch (error: any) {
     return { id: null, error: error.message };
@@ -66,8 +71,13 @@ export const updateDesign = async (designId: string, updates: Partial<Omit<Desig
       throw new Error('ليس لديك صلاحية لتعديل هذا التصميم');
     }
 
+    // إزالة الحقول غير المعرفة قبل التحديث
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+
     const updateData = {
-      ...updates,
+      ...cleanUpdates,
       updatedAt: serverTimestamp()
     };
 
