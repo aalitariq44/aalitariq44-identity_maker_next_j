@@ -281,7 +281,12 @@ const QRBarcodeGenerator: React.FC<QRBarcodeGeneratorProps> = ({ isOpen, onClose
       backgroundColor: qrOptions.color.light,
       foregroundColor: qrOptions.color.dark,
       opacity: 1,
-      src: generatedQR
+      src: generatedQR,
+      shadowEnabled: false,
+      shadowColor: '#000000',
+      shadowBlur: 0,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
     }
     
     addShape(shape)
@@ -305,7 +310,12 @@ const QRBarcodeGenerator: React.FC<QRBarcodeGeneratorProps> = ({ isOpen, onClose
       backgroundColor: barcodeOptions.background,
       lineColor: barcodeOptions.lineColor,
       opacity: 1,
-      src: generatedBarcode
+      src: generatedBarcode,
+      shadowEnabled: false,
+      shadowColor: '#000000',
+      shadowBlur: 0,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
     }
     
     addShape(shape)

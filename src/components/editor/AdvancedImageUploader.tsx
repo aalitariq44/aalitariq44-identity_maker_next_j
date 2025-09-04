@@ -244,7 +244,12 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
           blur: 0,
           sepia: 0,
           grayscale: 0,
-        }
+        },
+        shadowEnabled: false,
+        shadowColor: '#000000',
+        shadowBlur: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
       }
 
       addShape(imageShape)
@@ -303,7 +308,12 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
           blur: 0,
           sepia: 0,
           grayscale: 0,
-        }
+        },
+        shadowEnabled: false,
+        shadowColor: '#000000',
+        shadowBlur: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
       }
 
       addShape(imageShape)
@@ -528,6 +538,11 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                         borderWidth: 2,
                         borderColor: '#d1d5db',
                         opacity: 1,
+                        shadowEnabled: false,
+                        shadowColor: '#000000',
+                        shadowBlur: 0,
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 0,
                       }
                       addShape(shape)
                       onClose()
