@@ -11,6 +11,7 @@ import QRBarcodeGenerator from '@/components/editor/QRBarcodeGenerator'
 import TemplateLibrary from '@/components/editor/TemplateLibrary'
 import AlignmentTools from '@/components/editor/AlignmentTools'
 import AutoSaveManager from '@/components/editor/AutoSaveManager'
+import { ShortcutsButton } from '@/components/editor/KeyboardShortcuts'
 import { 
   exportCanvasAsImage, 
   exportCanvasAsPDF, 
@@ -285,6 +286,9 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+      
+      {/* Keyboard Shortcuts Helper */}
+      <ShortcutsButton />
     </div>
   )
 }
