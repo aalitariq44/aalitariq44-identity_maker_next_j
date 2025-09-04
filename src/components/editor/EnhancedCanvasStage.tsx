@@ -524,7 +524,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           const rectShape = shape as any
           context.fillStyle = rectShape.fill
           context.strokeStyle = rectShape.stroke
-          context.lineWidth = rectShape.strokeWidth / canvasSettings.zoom
+          context.lineWidth = rectShape.strokeWidth
           context.fillRect(0, 0, shape.size.width, shape.size.height)
           if (rectShape.strokeWidth > 0) {
             context.strokeRect(0, 0, shape.size.width, shape.size.height)
@@ -539,7 +539,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           context.fillStyle = circleShape.fill
           context.fill()
           context.strokeStyle = circleShape.stroke
-          context.lineWidth = circleShape.strokeWidth / canvasSettings.zoom
+          context.lineWidth = circleShape.strokeWidth
           if (circleShape.strokeWidth > 0) {
             context.stroke()
           }
@@ -547,7 +547,8 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           
         case 'text':
           const textShape = shape as any
-          context.font = `${textShape.fontSize / canvasSettings.zoom}px ${textShape.fontFamily}`
+          // Keep text size consistent with zoom level
+          context.font = `${textShape.fontSize}px ${textShape.fontFamily}`
           context.fillStyle = textShape.fill
           context.textAlign = 'left'
           context.textBaseline = 'top'
