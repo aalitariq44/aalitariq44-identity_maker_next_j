@@ -213,6 +213,99 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   className="w-full h-8 border border-gray-200 rounded cursor-pointer"
                 />
               </div>
+
+              {/* Shadow for Rect */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">الظل</label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">تفعيل الظل</span>
+                    <input
+                      type="checkbox"
+                      checked={(selectedShape as any).shadow?.enabled || false}
+                      onChange={(e) => handleShapeUpdate({
+                        shadow: {
+                          ...(selectedShape as any).shadow || {},
+                          enabled: e.target.checked
+                        }
+                      })}
+                      className="rounded"
+                    />
+                  </div>
+
+                  {(selectedShape as any).shadow?.enabled && (
+                    <div className="space-y-2 pl-2 border-l-2 border-gray-200">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">لون الظل</label>
+                        <input
+                          type="color"
+                          value={(selectedShape as any).shadow?.color || '#000000'}
+                          onChange={(e) => handleShapeUpdate({
+                            shadow: {
+                              ...(selectedShape as any).shadow || {},
+                              color: e.target.value
+                            }
+                          })}
+                          className="w-full h-6 border border-gray-200 rounded cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">X</label>
+                          <input
+                            type="number"
+                            min="-50"
+                            max="50"
+                            value={(selectedShape as any).shadow?.offsetX || 0}
+                            onChange={(e) => handleShapeUpdate({
+                              shadow: {
+                                ...(selectedShape as any).shadow || {},
+                                offsetX: Number(e.target.value)
+                              }
+                            })}
+                            className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Y</label>
+                          <input
+                            type="number"
+                            min="-50"
+                            max="50"
+                            value={(selectedShape as any).shadow?.offsetY || 0}
+                            onChange={(e) => handleShapeUpdate({
+                              shadow: {
+                                ...(selectedShape as any).shadow || {},
+                                offsetY: Number(e.target.value)
+                              }
+                            })}
+                            className="w-full px-1 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">الانتشار</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          value={(selectedShape as any).shadow?.blur || 5}
+                          onChange={(e) => handleShapeUpdate({
+                            shadow: {
+                              ...(selectedShape as any).shadow || {},
+                              blur: Number(e.target.value)
+                            }
+                          })}
+                          className="w-full"
+                        />
+                        <span className="text-xs text-gray-500">{(selectedShape as any).shadow?.blur || 5}px</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
