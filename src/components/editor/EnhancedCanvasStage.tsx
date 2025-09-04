@@ -429,6 +429,37 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
+    // Dynamic cursor for resize/rotate handles and move
+    const canvas = canvasRef.current
+    if (selectedShape && !isDragging && !isResizing && !isRotating && !isPanning && !isMiddleMousePanning && !selectionBox?.active) {
+      const handles = getShapeScreenHandles(selectedShape)
+      const hitHandle = handles.find(h => Math.abs(h.x - x) <= 8 && Math.abs(h.y - y) <= 8)
+      if (hitHandle) {
+        let cursorType = 'default'
+        switch (hitHandle.key) {
+          case 'rotate':
+            cursorType = 'crosshair'; break
+          case 'tl': case 'br':
+            cursorType = 'nwse-resize'; break
+          case 'tr': case 'bl':
+            cursorType = 'nesw-resize'; break
+          case 'tm': case 'bm':
+            cursorType = 'ns-resize'; break
+          case 'ml': case 'mr':
+            cursorType = 'ew-resize'; break
+          default:
+            cursorType = 'default'
+        }
+        canvas.style.cursor = cursorType
+        return
+      }
+      // Over shape for moving
+      if (isPointInShape({ x, y }, selectedShape)) {
+        canvas.style.cursor = 'move'
+        return
+      }
+    }
+
     // Handle panning
     if ((isPanning && isSpacePressed) || isMiddleMousePanning) {
       const deltaX = x - panOffset.x
@@ -491,14 +522,21 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
         nx = Math.round(nx / canvasSettings.gridSize) * canvasSettings.gridSize
         ny = Math.round(ny / canvasSettings.gridSize) * canvasSettings.gridSize
       }
-      resizeShape(shape.id, { width: newW, height: newH })
+
       if (shape.type === 'circle') {
         // Keep circle width == height
         const side = Math.max(newW, newH)
-        resizeShape(shape.id, { width: side, height: side })
-        updateShape(shape.id, { position: { ...shape.position, x: cx - side/2, y: cy - side/2 } as any, /* radius sync */ radius: side/2 } as any)
+        updateShape(shape.id, {
+          size: { width: side, height: side },
+          position: { x: cx - side/2, y: cy - side/2 },
+          radius: side/2
+        } as any) // Cast to any to allow radius property
+      } else {
+        updateShape(shape.id, {
+          size: { width: newW, height: newH },
+          position: { x: nx, y: ny }
+        })
       }
-      moveShape(shape.id, { x: nx, y: ny })
       return
     }
 
@@ -517,7 +555,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
 
       moveShape(selectedShapeId, { x: newX, y: newY })
     }
-  }, [isPanning, isSpacePressed, isMiddleMousePanning, selectionBox, isDragging, selectedShapeId, documentPan, canvasSettings, dragOffset, moveShape])
+  }, [isPanning, isSpacePressed, isMiddleMousePanning, selectionBox, isDragging, isResizing, isRotating, selectedShape, getShapeScreenHandles, isPointInShape, documentPan, canvasSettings, dragOffset, moveShape])
 
   const handleMouseUp = useCallback((e?: React.MouseEvent) => {
     if (e?.button === 1) {
