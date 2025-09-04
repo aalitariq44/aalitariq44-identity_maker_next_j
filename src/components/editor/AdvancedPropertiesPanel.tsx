@@ -155,22 +155,37 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
         {(selectedShape.type === 'rect' || selectedShape.type === 'circle' || selectedShape.type === 'triangle') && (
           <div className="p-3 bg-gray-50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-700 mb-3">الحدود السريعة</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-600">تفعيل/إلغاء الحدود</span>
-              <button
-                onClick={() => {
-                  const currentStrokeWidth = (selectedShape as any).strokeWidth || 0
-                  const newStrokeWidth = currentStrokeWidth > 0 ? 0 : 2
-                  handleShapeUpdate({ strokeWidth: newStrokeWidth })
-                }}
-                className={`px-3 py-1 text-xs rounded transition-colors ${
-                  ((selectedShape as any).strokeWidth || 0) > 0
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                }`}
-              >
-                {((selectedShape as any).strokeWidth || 0) > 0 ? 'إلغاء الحدود' : 'تفعيل الحدود'}
-              </button>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-600 mb-1">سمك الحدود</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={(selectedShape as any).strokeWidth || 0}
+                    onChange={(e) => handleShapeUpdate({ strokeWidth: Number(e.target.value) })}
+                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-600 opacity-0">زر</label>
+                  <button
+                    onClick={() => {
+                      const currentStrokeWidth = (selectedShape as any).strokeWidth || 0
+                      const newStrokeWidth = currentStrokeWidth > 0 ? 0 : 2
+                      handleShapeUpdate({ strokeWidth: newStrokeWidth })
+                    }}
+                    className={`px-3 py-1 text-xs rounded transition-colors whitespace-nowrap ${
+                      ((selectedShape as any).strokeWidth || 0) > 0
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {((selectedShape as any).strokeWidth || 0) > 0 ? 'إلغاء' : 'تفعيل'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
