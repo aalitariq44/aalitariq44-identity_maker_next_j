@@ -630,7 +630,7 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white bg-opacity-30 rounded-lg">
                       <button
                         onClick={() => selectImageForSizing(imageUrl)}
                         className="px-3 py-1 bg-blue-500 text-white text-xs rounded mb-1 hover:bg-blue-600"
@@ -663,7 +663,7 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                     height={256}
                     className="w-full aspect-square object-cover rounded-lg border border-gray-200"
                   />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white bg-opacity-30 rounded-lg">
                     <button
                       onClick={() => selectImageForSizing(imageUrl)}
                       className="px-3 py-1 bg-blue-500 text-white text-xs rounded mb-1 hover:bg-blue-600"
