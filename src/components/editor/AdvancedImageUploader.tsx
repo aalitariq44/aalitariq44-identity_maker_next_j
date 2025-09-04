@@ -114,26 +114,26 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
       img.onload = () => {
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')!
-        
+
         canvas.width = targetWidth
         canvas.height = targetHeight
-        
+
         // Calculate scaling to maintain aspect ratio and fill the target size
         const scale = Math.max(targetWidth / img.width, targetHeight / img.height)
         const scaledWidth = img.width * scale
         const scaledHeight = img.height * scale
-        
+
         // Center the image
         const x = (targetWidth - scaledWidth) / 2
         const y = (targetHeight - scaledHeight) / 2
-        
+
         // Fill background with white (for passport-style photos)
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, targetWidth, targetHeight)
-        
+
         // Draw the image
         ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
-        
+
         resolve(canvas.toDataURL('image/png', 0.9))
       }
       img.src = imageUrl
@@ -147,7 +147,7 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      
+
       // Check if file is an image
       if (!file.type.startsWith('image/')) {
         continue
@@ -268,9 +268,9 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
     img.onload = () => {
       const maxWidth = 300
       const maxHeight = 300
-      
+
       let { width, height } = img
-      
+
       // Scale down if too large
       if (width > maxWidth || height > maxHeight) {
         const aspectRatio = width / height
@@ -331,49 +331,49 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
   const generatePersonPlaceholder = (width: number, height: number): string => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
-    
+
     canvas.width = width
     canvas.height = height
-    
+
     // Background
     ctx.fillStyle = '#f3f4f6'
     ctx.fillRect(0, 0, width, height)
-    
+
     // Border
     ctx.strokeStyle = '#d1d5db'
     ctx.lineWidth = 2
     ctx.strokeRect(1, 1, width - 2, height - 2)
-    
+
     // Person icon
     const centerX = width / 2
     const centerY = height / 2
     const iconSize = Math.min(width, height) * 0.3
-    
+
     ctx.fillStyle = '#9ca3af'
-    
+
     // Head (circle)
     ctx.beginPath()
     ctx.arc(centerX, centerY - iconSize * 0.3, iconSize * 0.3, 0, 2 * Math.PI)
     ctx.fill()
-    
+
     // Body (rounded rectangle)
     ctx.beginPath()
     ctx.roundRect(centerX - iconSize * 0.4, centerY + iconSize * 0.1, iconSize * 0.8, iconSize * 0.6, iconSize * 0.1)
     ctx.fill()
-    
+
     // Text
     ctx.fillStyle = '#6b7280'
     ctx.font = `${Math.max(12, width * 0.08)}px Arial`
     ctx.textAlign = 'center'
     ctx.fillText('صورة شخصية', centerX, height - 15)
-    
+
     return canvas.toDataURL('image/png')
   }
 
   // Sample stock images
   const stockImages = [
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-    'https://www.marefa.org/w/images/thumb/4/48/Outdoors-man-portrait_(cropped).jpg/1200px-Outdoors-man-portrait_(cropped).jpg',
+    'https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face',
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
   ]
@@ -402,11 +402,10 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                 return (
                   <div
                     key={index}
-                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                      selectedSize.name === option.name
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${selectedSize.name === option.name
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => setSelectedSize(option)}
                   >
                     <div className="flex items-center justify-center mb-3">
@@ -566,13 +565,12 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
           {/* Upload Area */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">رفع صورة جديدة</h3>
-            
+
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                dragActive
+              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragActive
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
-              }`}
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -616,15 +614,15 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
           {uploadedImages.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">الصور المرفوعة</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {uploadedImages.map((imageUrl, index) => (
                   <div key={index} className="relative group">
                     <NextImage
                       src={imageUrl}
                       alt={`صورة مرفوعة ${index + 1}`}
-                      width={128}
-                      height={128}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      width={256}
+                      height={256}
+                      className="w-full h-64 object-cover rounded-lg border border-gray-200"
                     />
                     <button
                       onClick={() => removeImage(index)}
@@ -661,8 +659,8 @@ const AdvancedImageUploader: React.FC<AdvancedImageUploaderProps> = ({ isOpen, o
                   <NextImage
                     src={imageUrl}
                     alt={`صورة جاهزة ${index + 1}`}
-                    width={128}
-                    height={128}
+                    width={256}
+                    height={256}
                     className="w-full aspect-square object-cover rounded-lg border border-gray-200"
                   />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
