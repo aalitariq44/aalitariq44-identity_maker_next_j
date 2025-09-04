@@ -369,7 +369,7 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                 <input
                   type="number"
                   min="8"
-                  max="72"
+                  max="200"
                   value={(selectedShape as any).fontSize || 16}
                   onChange={(e) => handleShapeUpdate({ fontSize: Number(e.target.value) })}
                   className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
