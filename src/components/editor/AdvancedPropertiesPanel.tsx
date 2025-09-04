@@ -213,16 +213,6 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
                   className="w-full h-8 border border-gray-200 rounded cursor-pointer"
                 />
               </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">سمك الحدود</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={(selectedShape as any).strokeWidth || 0}
-                  onChange={(e) => handleShapeUpdate({ strokeWidth: Number(e.target.value) })}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
             </div>
           </div>
         )}
