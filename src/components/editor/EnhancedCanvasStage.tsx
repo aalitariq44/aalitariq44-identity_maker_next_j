@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import QRCode from 'qrcode'
+import JsBarcode from 'jsbarcode'
 import { useEditorStore } from '@/store/useEditorStore'
 import type { Shape } from '@/types/shapes'
 
@@ -24,6 +26,10 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     active: boolean
   } | null>(null)
   const [multiSelection, setMultiSelection] = useState<string[]>([])
+  // Resource caches (images, qr codes, barcodes)
+  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
+  const qrCache = useRef<Map<string, HTMLCanvasElement>>(new Map())
+  const barcodeCache = useRef<Map<string, HTMLCanvasElement>>(new Map())
   
   // Enhanced pan and zoom states
   const [isSpacePressed, setIsSpacePressed] = useState(false)
@@ -278,18 +284,58 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
   const isPointInShape = useCallback((point: { x: number; y: number }, shape: Shape): boolean => {
     if (!shape.visible || shape.locked) return false
 
-    const adjustedPoint = {
+    // Convert screen -> document coords
+    const docPt = {
       x: (point.x - documentPan.x) / canvasSettings.zoom,
-      y: (point.y - documentPan.y) / canvasSettings.zoom
+      y: (point.y - documentPan.y) / canvasSettings.zoom,
     }
-
+    // Center of shape
+    const cx = shape.position.x + shape.size.width / 2
+    const cy = shape.position.y + shape.size.height / 2
+    // Translate to center
+    const dx = docPt.x - cx
+    const dy = docPt.y - cy
+    // Inverse rotate
+    const rad = (-shape.rotation * Math.PI) / 180
+    const rx = dx * Math.cos(rad) - dy * Math.sin(rad)
+    const ry = dx * Math.sin(rad) + dy * Math.cos(rad)
+    // Check inside unrotated bounds
     return (
-      adjustedPoint.x >= shape.position.x &&
-      adjustedPoint.x <= shape.position.x + shape.size.width &&
-      adjustedPoint.y >= shape.position.y &&
-      adjustedPoint.y <= shape.position.y + shape.size.height
+      rx >= -shape.size.width / 2 &&
+      rx <= shape.size.width / 2 &&
+      ry >= -shape.size.height / 2 &&
+      ry <= shape.size.height / 2
     )
   }, [documentPan, canvasSettings.zoom])
+
+  // Helper to compute rotated handle positions in screen space
+  const getShapeScreenHandles = useCallback((shape: Shape) => {
+    const points: { key: string; x: number; y: number }[] = []
+    const cx = shape.position.x + shape.size.width / 2
+    const cy = shape.position.y + shape.size.height / 2
+    const rad = (shape.rotation * Math.PI) / 180
+    const corners = [
+      { key: 'tl', x: -shape.size.width / 2, y: -shape.size.height / 2 },
+      { key: 'tr', x: shape.size.width / 2, y: -shape.size.height / 2 },
+      { key: 'bl', x: -shape.size.width / 2, y: shape.size.height / 2 },
+      { key: 'br', x: shape.size.width / 2, y: shape.size.height / 2 },
+      { key: 'tm', x: 0, y: -shape.size.height / 2 },
+      { key: 'bm', x: 0, y: shape.size.height / 2 },
+      { key: 'ml', x: -shape.size.width / 2, y: 0 },
+      { key: 'mr', x: shape.size.width / 2, y: 0 },
+    ]
+    corners.forEach(c => {
+      const rx = c.x * Math.cos(rad) - c.y * Math.sin(rad) + cx
+      const ry = c.x * Math.sin(rad) + c.y * Math.cos(rad) + cy
+      points.push({ key: c.key, x: rx * canvasSettings.zoom + documentPan.x, y: ry * canvasSettings.zoom + documentPan.y })
+    })
+    // rotation handle (above top middle)
+    const rotLocal = { x: 0, y: -shape.size.height / 2 - 30 }
+    const rrx = rotLocal.x * Math.cos(rad) - rotLocal.y * Math.sin(rad) + cx
+    const rry = rotLocal.x * Math.sin(rad) + rotLocal.y * Math.cos(rad) + cy
+    points.push({ key: 'rotate', x: rrx * canvasSettings.zoom + documentPan.x, y: rry * canvasSettings.zoom + documentPan.y })
+    return points
+  }, [canvasSettings.zoom, documentPan])
 
   // Mouse handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -325,26 +371,35 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       return
     }
 
-    // Find clicked shape
-    const sortedShapes = [...shapes]
-      .filter(shape => shape.visible && !shape.locked)
-      .sort((a, b) => b.zIndex - a.zIndex)
-    
-    let clickedShape: Shape | null = null
-    for (const shape of sortedShapes) {
-      if (isPointInShape({ x, y }, shape)) {
-        clickedShape = shape
-        break
+    // First check existing selection handles for resize / rotate
+    if (selectedShape) {
+      const handles = getShapeScreenHandles(selectedShape)
+      const hitHandle = handles.find(h => {
+        return Math.abs(h.x - x) <= 8 && Math.abs(h.y - y) <= 8
+      })
+      if (hitHandle) {
+        if (hitHandle.key === 'rotate') {
+          setIsRotating(true)
+        } else {
+          setIsResizing(true)
+          setResizeHandle(hitHandle.key)
+        }
+        return
       }
     }
 
+    // Find clicked shape (topmost)
+    const sortedShapes = [...shapes]
+      .filter(shape => shape.visible && !shape.locked)
+      .sort((a, b) => b.zIndex - a.zIndex)
+    let clickedShape: Shape | null = null
+    for (const shape of sortedShapes) {
+      if (isPointInShape({ x, y }, shape)) { clickedShape = shape; break }
+    }
     if (clickedShape) {
       if (e.ctrlKey || e.metaKey) {
-        if (multiSelection.includes(clickedShape.id)) {
-          setMultiSelection(prev => prev.filter(id => id !== clickedShape.id))
-        } else {
-          setMultiSelection(prev => [...prev, clickedShape.id])
-        }
+        if (multiSelection.includes(clickedShape.id)) setMultiSelection(prev => prev.filter(id => id !== clickedShape.id))
+        else setMultiSelection(prev => [...prev, clickedShape.id])
       } else {
         selectShape(clickedShape.id)
         setMultiSelection([])
@@ -395,6 +450,55 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
         ...prev,
         end: { x: docX, y: docY }
       } : null)
+      return
+    }
+
+    // Handle rotation
+    if (isRotating && selectedShape) {
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      const cx = selectedShape.position.x + selectedShape.size.width / 2
+      const cy = selectedShape.position.y + selectedShape.size.height / 2
+      const angle = Math.atan2(docY - cy, docX - cx) * 180 / Math.PI + 90 // +90 so top is 0°
+      updateShape(selectedShape.id, { rotation: angle })
+      return
+    }
+
+    // Handle resizing
+    if (isResizing && selectedShape && resizeHandle) {
+      const docX = (x - documentPan.x) / canvasSettings.zoom
+      const docY = (y - documentPan.y) / canvasSettings.zoom
+      const shape = selectedShape
+      const cx = shape.position.x + shape.size.width / 2
+      const cy = shape.position.y + shape.size.height / 2
+      // Convert pointer into local (inverse rotation)
+      const dx = docX - cx
+      const dy = docY - cy
+      const rad = (-shape.rotation * Math.PI) / 180
+      const lx = dx * Math.cos(rad) - dy * Math.sin(rad)
+      const ly = dx * Math.sin(rad) + dy * Math.cos(rad)
+      let newW = shape.size.width
+      let newH = shape.size.height
+      const min = 10
+      if (['tl','ml','bl'].includes(resizeHandle)) newW = Math.max(min, (shape.size.width / 2) - lx) * 2
+      if (['tr','mr','br'].includes(resizeHandle)) newW = Math.max(min, (shape.size.width / 2) + lx) * 2
+      if (['tl','tm','tr'].includes(resizeHandle)) newH = Math.max(min, (shape.size.height / 2) - ly) * 2
+      if (['bl','bm','br'].includes(resizeHandle)) newH = Math.max(min, (shape.size.height / 2) + ly) * 2
+      let nx = cx - newW / 2
+      let ny = cy - newH / 2
+      // Snap
+      if (canvasSettings.snapToGrid) {
+        nx = Math.round(nx / canvasSettings.gridSize) * canvasSettings.gridSize
+        ny = Math.round(ny / canvasSettings.gridSize) * canvasSettings.gridSize
+      }
+      resizeShape(shape.id, { width: newW, height: newH })
+      if (shape.type === 'circle') {
+        // Keep circle width == height
+        const side = Math.max(newW, newH)
+        resizeShape(shape.id, { width: side, height: side })
+        updateShape(shape.id, { position: { ...shape.position, x: cx - side/2, y: cy - side/2 } as any, /* radius sync */ radius: side/2 } as any)
+      }
+      moveShape(shape.id, { x: nx, y: ny })
       return
     }
 
@@ -450,7 +554,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       setSelectionBox(null)
     }
 
-    if (isDragging || isResizing || isRotating) {
+  if (isDragging || isResizing || isRotating) {
       saveToHistory()
     }
 
@@ -463,6 +567,47 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
   }, [selectionBox, shapes, isDragging, isResizing, isRotating, saveToHistory, setMultiSelection, selectShape])
 
   // Enhanced drawing function
+  // Generate QR & barcode & load images when shapes change
+  useEffect(() => {
+    shapes.forEach(shape => {
+      if (shape.type === 'image') {
+        const s: any = shape
+        if (s.imageUrl && !imageCache.current.has(s.imageUrl)) {
+          const img = new Image()
+            ;(img as any).crossOrigin = 'anonymous'
+          img.onload = () => {
+            imageCache.current.set(s.imageUrl, img)
+            setContext(prev => prev) // trigger redraw
+          }
+          img.src = s.imageUrl
+        }
+      }
+      if (shape.type === 'qr') {
+        if (!qrCache.current.has(shape.id)) {
+          const canvas = document.createElement('canvas')
+          QRCode.toCanvas(canvas, (shape as any).data || '', { width: shape.size.width, margin: 0, color: { dark: (shape as any).foregroundColor, light: (shape as any).backgroundColor } }, (err) => {
+            if (!err) {
+              qrCache.current.set(shape.id, canvas)
+              setContext(prev => prev)
+            }
+          })
+        }
+      }
+      if (shape.type === 'barcode') {
+        if (!barcodeCache.current.has(shape.id)) {
+          const canvas = document.createElement('canvas')
+          try {
+            JsBarcode(canvas, (shape as any).data || '123456', { format: 'CODE128', lineColor: (shape as any).lineColor || '#000', background: (shape as any).backgroundColor || '#fff', width: 2, height: shape.size.height - 4, displayValue: false, margin: 0 })
+            barcodeCache.current.set(shape.id, canvas)
+            setContext(prev => prev)
+          } catch (e) {
+            console.error('Barcode generation failed', e)
+          }
+        }
+      }
+    })
+  }, [shapes])
+
   useEffect(() => {
     if (!context || !canvasRef.current) return
 
@@ -471,10 +616,15 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
     // Clear canvas
     context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
     
-    // Apply transformations
+  // Apply transformations
     context.save()
     context.translate(documentPan.x, documentPan.y)
     context.scale(canvasSettings.zoom, canvasSettings.zoom)
+  // Clip to document area so shapes outside hidden
+  context.save()
+  context.beginPath()
+  context.rect(0, 0, canvasSettings.width, canvasSettings.height)
+  context.clip()
     
     // Draw document background
     context.fillStyle = canvasSettings.backgroundColor
@@ -515,7 +665,10 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       if (!shape.visible) return
       
       context.save()
-      context.translate(shape.position.x, shape.position.y)
+      // Center-based rotation
+      const cx = shape.position.x + shape.size.width / 2
+      const cy = shape.position.y + shape.size.height / 2
+      context.translate(cx, cy)
       context.rotate((shape.rotation * Math.PI) / 180)
       context.globalAlpha = shape.opacity
       
@@ -525,22 +678,21 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           context.fillStyle = rectShape.fill
           context.strokeStyle = rectShape.stroke
           context.lineWidth = rectShape.strokeWidth
-          context.fillRect(0, 0, shape.size.width, shape.size.height)
-          if (rectShape.strokeWidth > 0) {
-            context.strokeRect(0, 0, shape.size.width, shape.size.height)
-          }
+          context.fillRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          if (rectShape.strokeWidth > 0) context.strokeRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
           break
           
         case 'circle':
           const circleShape = shape as any
-          const radius = circleShape.radius
+          const radius = Math.min(shape.size.width, shape.size.height) / 2
+          circleShape.radius = radius
           context.beginPath()
-          context.arc(radius, radius, radius, 0, 2 * Math.PI)
-          context.fillStyle = circleShape.fill
+          context.arc(0, 0, radius, 0, 2 * Math.PI)
+            context.fillStyle = circleShape.fill
           context.fill()
-          context.strokeStyle = circleShape.stroke
-          context.lineWidth = circleShape.strokeWidth
           if (circleShape.strokeWidth > 0) {
+            context.strokeStyle = circleShape.stroke
+            context.lineWidth = circleShape.strokeWidth
             context.stroke()
           }
           break
@@ -550,17 +702,17 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
           // Keep text size consistent with zoom level
           context.font = `${textShape.fontSize}px ${textShape.fontFamily}`
           context.fillStyle = textShape.fill
-          context.textAlign = 'left'
-          context.textBaseline = 'top'
+          context.textAlign = 'center'
+          context.textBaseline = 'middle'
           context.fillText(textShape.text, 0, 0)
           break
           
         case 'triangle':
           const triangleShape = shape as any
           context.beginPath()
-          context.moveTo(shape.size.width / 2, 0)
-          context.lineTo(0, shape.size.height)
-          context.lineTo(shape.size.width, shape.size.height)
+          context.moveTo(0, -shape.size.height/2)
+          context.lineTo(-shape.size.width/2, shape.size.height/2)
+          context.lineTo(shape.size.width/2, shape.size.height/2)
           context.closePath()
           context.fillStyle = triangleShape.fill
           context.fill()
@@ -570,21 +722,60 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
             context.stroke()
           }
           break
+
+        case 'image': {
+          const imgShape = shape as any
+          const img = imageCache.current.get(imgShape.imageUrl)
+          if (img) {
+            context.drawImage(img, -shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+            if (imgShape.strokeWidth > 0) {
+              context.strokeStyle = imgShape.stroke || '#000'
+              context.lineWidth = imgShape.strokeWidth
+              context.strokeRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+            }
+          } else {
+            context.fillStyle = '#ddd'
+            context.fillRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          }
+          break
+        }
+
+        case 'qr': {
+          const qrCanvas = qrCache.current.get(shape.id)
+          if (qrCanvas) {
+            context.drawImage(qrCanvas, -shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          } else {
+            context.fillStyle = '#eee'
+            context.fillRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          }
+          break
+        }
+
+        case 'barcode': {
+          const bCanvas = barcodeCache.current.get(shape.id)
+          if (bCanvas) {
+            context.drawImage(bCanvas, -shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          } else {
+            context.fillStyle = '#eee'
+            context.fillRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
+          }
+          break
+        }
           
         default:
-          // Default rectangle for unknown types
           context.fillStyle = '#cccccc'
-          context.fillRect(0, 0, shape.size.width, shape.size.height)
+          context.fillRect(-shape.size.width/2, -shape.size.height/2, shape.size.width, shape.size.height)
           break
       }
       
       context.restore()
     })
 
-    // Draw selections (outside of transformations)
-    context.restore()
+    // Restore clip but keep outer transform for selection overlays
+    context.restore() // end clip
+    context.restore() // end pan/zoom
 
-    // Draw multi-selection
+    // Draw multi-selection (axis-aligned for now)
     if (multiSelection.length > 1) {
       context.strokeStyle = '#f59e0b'
       context.lineWidth = 2
@@ -604,42 +795,44 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
 
     // Draw single selection
     if (selectedShape && multiSelection.length <= 1) {
+      const handles = getShapeScreenHandles(selectedShape)
+      // Calculate bounding box for rotated shape
+      const xs = handles.filter(h => ['tl','tr','br','bl'].includes(h.key)).map(h => h.x)
+      const ys = handles.filter(h => ['tl','tr','br','bl'].includes(h.key)).map(h => h.y)
+      const minX = Math.min(...xs) - 3
+      const maxX = Math.max(...xs) + 3
+      const minY = Math.min(...ys) - 3
+      const maxY = Math.max(...ys) + 3
+      
+      // Draw bounding box
       context.strokeStyle = '#0ea5e9'
       context.lineWidth = 2
-      context.setLineDash([5, 5])
+      context.setLineDash([5,5])
+      context.strokeRect(minX, minY, maxX - minX, maxY - minY)
       
-      const x = selectedShape.position.x * canvasSettings.zoom + documentPan.x - 5
-      const y = selectedShape.position.y * canvasSettings.zoom + documentPan.y - 5
-      const width = selectedShape.size.width * canvasSettings.zoom + 10
-      const height = selectedShape.size.height * canvasSettings.zoom + 10
-      
-      context.strokeRect(x, y, width, height)
-      
-      // Draw resize handles
-      const handles = [
-        { x: x, y: y }, // top-left
-        { x: x + width, y: y }, // top-right
-        { x: x, y: y + height }, // bottom-left
-        { x: x + width, y: y + height }, // bottom-right
-        { x: x + width/2, y: y }, // top-center
-        { x: x + width/2, y: y + height }, // bottom-center
-        { x: x, y: y + height/2 }, // left-center
-        { x: x + width, y: y + height/2 }, // right-center
-      ]
-      
-      context.fillStyle = '#0ea5e9'
-      context.strokeStyle = '#ffffff'
-      context.lineWidth = 1
+      // Handles
       context.setLineDash([])
-      
-      handles.forEach(handle => {
-        context.fillRect(handle.x - 4, handle.y - 4, 8, 8)
-        context.strokeRect(handle.x - 4, handle.y - 4, 8, 8)
+      context.fillStyle = '#0ea5e9'
+      context.strokeStyle = '#fff'
+      handles.forEach(h => {
+        const size = h.key === 'rotate' ? 10 : 8
+        context.fillRect(h.x - size/2, h.y - size/2, size, size)
+        context.strokeRect(h.x - size/2, h.y - size/2, size, size)
       })
+      // Draw line to rotation handle
+      const tm = handles.find(h=>h.key==='tm')
+      const rot = handles.find(h=>h.key==='rotate')
+      if (tm && rot) {
+        context.strokeStyle = '#0ea5e9'
+        context.beginPath()
+        context.moveTo(tm.x, tm.y)
+        context.lineTo(rot.x, rot.y)
+        context.stroke()
+      }
     }
 
     // Draw selection box
-    if (selectionBox?.active) {
+  if (selectionBox?.active) {
       context.save()
       context.translate(documentPan.x, documentPan.y)
       context.scale(canvasSettings.zoom, canvasSettings.zoom)
@@ -658,7 +851,7 @@ export const EnhancedCanvasStage: React.FC<EnhancedCanvasStageProps> = () => {
       context.restore()
     }
 
-  }, [context, shapes, canvasSettings, selectedShape, multiSelection, selectionBox, documentPan])
+  }, [context, shapes, canvasSettings, selectedShape, multiSelection, selectionBox, documentPan, getShapeScreenHandles])
 
   return (
     <div 
