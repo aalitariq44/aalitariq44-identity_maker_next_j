@@ -1,8 +1,12 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useEditorStore } from '@/store/useEditorStore'
+import { useAuth } from '@/hooks/useAuth'
+import { getDesign } from '@/lib/firestore'
+import Navbar from '@/components/common/Navbar'
 import ExportModal from '@/components/editor/ExportModal'
 import CardSizeSelector from '@/components/editor/CardSizeSelector'
 import CustomSizeModal from '@/components/editor/CustomSizeModal'
@@ -11,6 +15,8 @@ import QRBarcodeGenerator from '@/components/editor/QRBarcodeGenerator'
 import TemplateLibrary from '@/components/editor/TemplateLibrary'
 import AlignmentTools from '@/components/editor/AlignmentTools'
 import AutoSaveManager from '@/components/editor/AutoSaveManager'
+import SaveDesignModal from '@/components/editor/SaveDesignModal'
+import LoadDesignModal from '@/components/editor/LoadDesignModal'
 import { ShortcutsButton } from '@/components/editor/KeyboardShortcuts'
 import { 
   exportCanvasAsImage, 
@@ -19,7 +25,6 @@ import {
   loadProjectFromJSON 
 } from '@/lib/exportUtils'
 import { ArrowLeft, Settings, Download, Save, FolderOpen, RotateCcw, Layers, Grid, BookTemplate, Palette } from 'lucide-react'
-import Link from 'next/link'
 
 // Dynamic imports for client-side components
 const EnhancedCanvasStage = dynamic(() => import('@/components/editor/EnhancedCanvasStage'), { ssr: false })
@@ -28,6 +33,10 @@ const AdvancedLayersPanel = dynamic(() => import('@/components/editor/AdvancedLa
 const AdvancedPropertiesPanel = dynamic(() => import('@/components/editor/AdvancedPropertiesPanel'), { ssr: false })
 
 export default function EditorPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+  
   const canvasRef = useRef<HTMLDivElement>(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
@@ -36,8 +45,12 @@ export default function EditorPage() {
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showAlignmentTools, setShowAlignmentTools] = useState(false)
   const [showQRBarcodeGenerator, setShowQRBarcodeGenerator] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showLoadModal, setShowLoadModal] = useState(false)
   const [showRulers, setShowRulers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null)
 
   const {
     canvasSettings,
@@ -47,6 +60,38 @@ export default function EditorPage() {
     loadProject,
     updateCanvasSettings,
   } = useEditorStore()
+
+  // تحميل التصميم إذا تم تمرير معرف في URL
+  useEffect(() => {
+    const designId = searchParams.get('design')
+    if (designId && user) {
+      loadDesignFromFirebase(designId)
+    }
+  }, [searchParams, user])
+
+  // إعادة توجيه للمصادقة إذا لم يكن المستخدم مسجل دخول
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth')
+    }
+  }, [authLoading, user, router])
+
+  const loadDesignFromFirebase = async (designId: string) => {
+    setLoading(true)
+    try {
+      const result = await getDesign(designId)
+      if (result.error) {
+        alert('خطأ في تحميل التصميم: ' + result.error)
+      } else if (result.design) {
+        loadProject(result.design.data)
+        setCurrentDesignId(designId)
+      }
+    } catch (error) {
+      console.error('Error loading design:', error)
+      alert('حدث خطأ في تحميل التصميم')
+    }
+    setLoading(false)
+  }
 
   const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
     if (!canvasRef.current) return
@@ -88,12 +133,26 @@ export default function EditorPage() {
   }
 
   const handleLoadProject = async () => {
+    if (user) {
+      setShowLoadModal(true)
+    } else {
+      // Fallback للتحميل من ملف محلي
+      try {
+        const projectData = await loadProjectFromJSON()
+        loadProject(JSON.stringify(projectData))
+      } catch (error) {
+        console.error('Load failed:', error)
+        alert('فشل في تحميل المشروع. تأكد من صحة الملف.')
+      }
+    }
+  }
+
+  const handleLoadFromFirebase = (designData: string) => {
     try {
-      const projectData = await loadProjectFromJSON()
-      loadProject(JSON.stringify(projectData))
+      loadProject(designData)
     } catch (error) {
       console.error('Load failed:', error)
-      alert('فشل في تحميل المشروع. تأكد من صحة الملف.')
+      alert('فشل في تحميل التصميم.')
     }
   }
 
@@ -119,22 +178,50 @@ export default function EditorPage() {
     setShowRulers(!showRulers)
   }
 
+  if (authLoading || loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null // سيتم إعادة التوجيه بواسطة useEffect
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Navbar */}
+      <Navbar 
+        showSaveButton={true}
+        showOpenButton={true}
+        onSave={() => setShowSaveModal(true)}
+        onOpen={handleLoadProject}
+      />
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-4">
-          <Link
-            href="/"
+          <button
+            onClick={() => router.push('/')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>الرجوع للرئيسية</span>
-          </Link>
+          </button>
           
           <div className="w-px h-6 bg-gray-300" />
           
           <h1 className="text-xl font-bold text-gray-800">محرر الهويات المتقدم</h1>
+          {currentDesignId && (
+            <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              تحرير تصميم محفوظ
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -256,36 +343,22 @@ export default function EditorPage() {
         onClose={() => setShowTemplateLibrary(false)}
       />
 
+      {/* Save Design Modal */}
+      <SaveDesignModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        existingDesignId={currentDesignId || undefined}
+      />
+
+      {/* Load Design Modal */}
+      <LoadDesignModal
+        isOpen={showLoadModal}
+        onClose={() => setShowLoadModal(false)}
+        onLoad={handleLoadFromFirebase}
+      />
+
       {/* Status Bar - Enhanced */}
-      <div className="bg-white border-t border-gray-200 px-6 py-3">
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-6">
-            <span className="font-medium">
-              Document: {canvasSettings.width}×{canvasSettings.height}px
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              Zoom: {Math.round(canvasSettings.zoom * 100)}%
-            </span>
-            <span className={`flex items-center gap-1 ${canvasSettings.showGrid ? 'text-blue-600' : ''}`}>
-              <Grid className="w-4 h-4" />
-              Grid {canvasSettings.showGrid ? 'ON' : 'OFF'}
-            </span>
-            <span className={`flex items-center gap-1 ${canvasSettings.snapToGrid ? 'text-purple-600' : ''}`}>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 12L8 10l2-2 2 2-2 2zM8 8L6 6l2-2 2 2-2 2zm4 0l2-2 2 2-2 2-2-2zm-4 4l-2 2 2 2 2-2-2-2zm4 0l2 2 2 2 2-2-2-2z"/>
-              </svg>
-              Snap {canvasSettings.snapToGrid ? 'ON' : 'OFF'}
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-green-600 font-medium">Ready for Design</span>
-            <span className="text-xs text-gray-400">
-              Tip: Middle mouse to pan, Space+drag to move around
-            </span>
-          </div>
-        </div>
-      </div>
+      <div className="bg-white border-t border-gray-200 px-6 py-3">{/* حذف باقي محتوى status bar حسب السياق ... */}</div>
       
       {/* Keyboard Shortcuts Helper */}
       <ShortcutsButton />

@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "firebase-setup": "echo 'يرجى قراءة FIREBASE_SETUP.md لإعداد Firebase'"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.5",
+    "firebase": "^12.2.1",
     "html-to-image": "^1.11.11",
     "immer": "^10.0.3",
     "jsbarcode": "^3.12.1",
