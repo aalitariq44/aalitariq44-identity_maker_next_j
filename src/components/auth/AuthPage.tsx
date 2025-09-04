@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, signUp, signInWithGoogle, resetPassword } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
+import FirebaseStatus from '@/components/debug/FirebaseStatus';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +14,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showFirebaseStatus, setShowFirebaseStatus] = useState(false);
   
   const router = useRouter();
   const { user } = useAuth();
@@ -30,26 +32,52 @@ const AuthPage = () => {
     setError('');
 
     try {
+      // التحقق من صحة البيانات قبل الإرسال
+      if (!email.trim()) {
+        setError('يرجى إدخال البريد الإلكتروني');
+        setLoading(false);
+        return;
+      }
+
+      if (!password.trim()) {
+        setError('يرجى إدخال كلمة المرور');
+        setLoading(false);
+        return;
+      }
+
+      if (!isLogin && !displayName.trim()) {
+        setError('يرجى إدخال الاسم الكامل');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Form submission attempt:', { isLogin, email });
+
       let result;
       
       if (isLogin) {
-        result = await signIn(email, password);
+        result = await signIn(email.trim(), password);
+        console.log('Sign in result:', result);
       } else {
-        if (!displayName.trim()) {
-          setError('يرجى إدخال الاسم');
+        if (password.length < 6) {
+          setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
           setLoading(false);
           return;
         }
-        result = await signUp(email, password, displayName);
+        result = await signUp(email.trim(), password, displayName.trim());
+        console.log('Sign up result:', result);
       }
 
       if (result.error) {
-        setError(getArabicErrorMessage(result.error));
-      } else {
+        console.error('Authentication error:', result.error);
+        setError(result.error);
+      } else if (result.user) {
+        console.log('Authentication successful, redirecting...');
         router.push('/editor');
       }
     } catch (err) {
-      setError('حدث خطأ غير متوقع');
+      console.error('Unexpected error:', err);
+      setError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
     }
 
     setLoading(false);
@@ -60,14 +88,20 @@ const AuthPage = () => {
     setError('');
 
     try {
+      console.log('Attempting Google sign in...');
       const result = await signInWithGoogle();
+      console.log('Google sign in result:', result);
+      
       if (result.error) {
-        setError(getArabicErrorMessage(result.error));
-      } else {
+        console.error('Google sign in error:', result.error);
+        setError(result.error);
+      } else if (result.user) {
+        console.log('Google sign in successful, redirecting...');
         router.push('/editor');
       }
     } catch (err) {
-      setError('حدث خطأ غير متوقع');
+      console.error('Unexpected Google sign in error:', err);
+      setError('حدث خطأ في تسجيل الدخول بـ Google. يرجى المحاولة مرة أخرى.');
     }
 
     setLoading(false);
@@ -318,7 +352,22 @@ const AuthPage = () => {
               </button>
             </div>
           </form>
+
+          {/* زر فحص Firebase - للتطوير فقط */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowFirebaseStatus(true)}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              فحص حالة Firebase
+            </button>
+          </div>
         </div>
+
+        {/* مودال حالة Firebase */}
+        {showFirebaseStatus && (
+          <FirebaseStatus onClose={() => setShowFirebaseStatus(false)} />
+        )}
       </div>
     </div>
   );

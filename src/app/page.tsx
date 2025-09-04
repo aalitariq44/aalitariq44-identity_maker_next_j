@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/common/Navbar'
+import FirebaseWarning from '@/components/common/FirebaseWarning'
 import { CreditCard, Palette, Download, FileText, Sparkles, ArrowLeft } from 'lucide-react'
 
 export default function HomePage() {
@@ -20,6 +21,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Firebase Warning */}
+      <FirebaseWarning />
+      
       {/* Navbar */}
       <Navbar />
 
