@@ -141,22 +141,6 @@ const AutoSaveManager: React.FC<AutoSaveManagerProps> = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUnsavedChanges, saveToLocal])
 
-  // Check for autosave on mount
-  useEffect(() => {
-    const autoSaveData = loadFromAutoSave()
-    if (autoSaveData && shapes.length === 0) {
-      const shouldRestore = window.confirm(
-        'تم العثور على نسخة محفوظة تلقائياً من مشروعك. هل تريد استعادتها؟'
-      )
-      
-      if (shouldRestore) {
-        // Load the autosaved project
-        // This would be implemented by calling loadProject from the store
-        console.log('Restoring autosave:', autoSaveData)
-      }
-    }
-  }, [loadFromAutoSave, shapes.length])
-
   // Format relative time
   const getRelativeTime = (date: Date) => {
     const now = new Date()
