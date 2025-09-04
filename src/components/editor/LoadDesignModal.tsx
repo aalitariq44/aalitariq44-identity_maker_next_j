@@ -74,21 +74,24 @@ const LoadDesignModal: React.FC<LoadDesignModalProps> = ({ isOpen, onClose, onLo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">تحميل تصميم محفوظ</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">تحميل تصميم محفوظ</h2>
+            <p className="text-gray-600">اختر من تصاميمك المحفوظة</p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition duration-200"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -111,14 +114,14 @@ const LoadDesignModal: React.FC<LoadDesignModalProps> = ({ isOpen, onClose, onLo
                 {designs.map((design) => (
                   <div
                     key={design.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition duration-200 ${
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                       selectedDesign === design.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedDesign(design.id!)}
                   >
-                    <div className="flex items-start space-x-4">
+                    <div className="flex items-start gap-4">
                       {/* Thumbnail */}
                       <div className="w-16 h-10 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
                         {design.thumbnail ? (
@@ -144,7 +147,7 @@ const LoadDesignModal: React.FC<LoadDesignModalProps> = ({ isOpen, onClose, onLo
                             {design.description}
                           </p>
                         )}
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                           <span>آخر تحديث: {formatDate(design.updatedAt)}</span>
                           {design.tags && design.tags.length > 0 && (
                             <span>{design.tags.length} تاج</span>
@@ -164,23 +167,23 @@ const LoadDesignModal: React.FC<LoadDesignModalProps> = ({ isOpen, onClose, onLo
               </div>
             </>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex space-x-3 pt-6 border-t mt-6">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200"
-            >
-              إلغاء
-            </button>
-            <button
-              onClick={handleLoad}
-              disabled={!selectedDesign}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              تحميل التصميم
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={handleLoad}
+            disabled={!selectedDesign}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            تحميل التصميم
+          </button>
         </div>
       </div>
     </div>
