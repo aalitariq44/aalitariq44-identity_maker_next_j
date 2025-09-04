@@ -22,7 +22,7 @@ export const PropertiesPanel: React.FC = () => {
 
   if (!selectedShape) {
     return (
-      <div className="w-80 bg-white border-l border-gray-200 p-4">
+      <div className="w-80 bg-red-500 border-l border-gray-200 p-4">
         <div className="text-center text-gray-500 mt-8">
           <p className="text-lg font-medium">لوحة الخصائص</p>
           <p className="text-sm mt-2">اختر عنصرًا لتعديل خصائصه</p>
@@ -236,7 +236,7 @@ export const PropertiesPanel: React.FC = () => {
   }
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto max-h-screen">
+    <div className="w-80 bg-red-500 border-l border-gray-200 p-4 overflow-y-auto max-h-screen">
       <div className="mb-6">
         <h3 className="text-lg font-medium text-gray-800">خصائص العنصر</h3>
         <p className="text-sm text-gray-500 mt-1">

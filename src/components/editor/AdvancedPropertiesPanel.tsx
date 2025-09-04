@@ -151,6 +151,30 @@ const AdvancedPropertiesPanel: React.FC<AdvancedPropertiesPanelProps> = ({ class
           </div>
         </div>
 
+        {/* Quick Border Toggle */}
+        {(selectedShape.type === 'rect' || selectedShape.type === 'circle' || selectedShape.type === 'triangle') && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">الحدود السريعة</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">تفعيل/إلغاء الحدود</span>
+              <button
+                onClick={() => {
+                  const currentStrokeWidth = (selectedShape as any).strokeWidth || 0
+                  const newStrokeWidth = currentStrokeWidth > 0 ? 0 : 2
+                  handleShapeUpdate({ strokeWidth: newStrokeWidth })
+                }}
+                className={`px-3 py-1 text-xs rounded transition-colors ${
+                  ((selectedShape as any).strokeWidth || 0) > 0
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                {((selectedShape as any).strokeWidth || 0) > 0 ? 'إلغاء الحدود' : 'تفعيل الحدود'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Shape-specific properties */}
         {selectedShape.type === 'rect' && (
           <div className="p-3 bg-gray-50 rounded-lg">
